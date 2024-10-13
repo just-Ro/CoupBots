@@ -1,0 +1,33 @@
+INIT|ID|card1,card2|coins                        // Game Initialization: ID = Player ID, card1 = First card, card2 = Second card, coins = Initial coin count
+READY|ID                                         // Player Ready: ID = Player ID
+ACT|ID|ACTION|CARD|targetID(optional)            // Player Action: ID = Player ID, ACTION = Action type, CARD = Character used for the action, targetID = Target Player ID (if applicable)
+ALLOW|ID                                         // Allow Action: ID = Player ID allowing an action to proceed (no block, no challenge)
+CHAL|ID|targetID|ACTION                          // Challenge Action: ID = Challenger Player ID, targetID = Player performing action, ACTION = Action being challenged
+BLOCK|ID|ACTION|CARD                             // Block Action: ID = Blocking Player ID, ACTION = Action being blocked, CARD = Character used to block
+SHOW|ID|card                                     // Request Card Reveal: ID = Player ID, card = Character card to reveal
+LOSE|ID|card                                     // Lose Influence: ID = Player ID, card = Character card lost
+COINS|ID|amount                                  // Update Coins: ID = Player ID, amount = Current coin count
+END|winnerID                                     // Game End: winnerID = Player ID of the winner
+DECK|ID|card1,card2                              // Inform Player of Current Deck: ID = Player ID, card1 = First card, card2 = Second card
+CHOOSE|ID|card1,card2                            // Ask Player to Choose Cards to Exchange: ID = Player ID, card1 = First card to choose, card2 = Second card to choose
+KEEP|ID|card1,card2                              // Player Chooses Which 2 Cards to Keep: ID = Player ID, card1 = First card to keep, card2 = Second card to keep
+
+---
+### Server destination tags
+tag|message         // tag
+
+### Actions (ACTION code)
+I    // Income
+F    // Foreign Aid
+C    // Coup
+T    // Tax (Duke)
+A    // Assassinate (Assassin)
+S    // Steal (Captain)
+X    // Exchange (Ambassador)
+
+### Character Codes (card code)
+D    // Duke
+A    // Assassin
+C    // Contessa
+Cp   // Captain
+Am   // Ambassador
