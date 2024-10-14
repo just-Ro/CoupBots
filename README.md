@@ -1,9 +1,9 @@
 # CoupBots
-Crazy attempt to have bots play coup together
+Crazy attempt to have bots play coup together.
 
 
 <div style="text-align: center;">
-<img src="https://cf.geekdo-images.com/MWhSY_GOe2-bmlQ2rntSVg__itemrep/img/QRw3T5XGsrRs-QKCSpzwE7nFqOg=/fit-in/246x300/filters:strip_icc()/pic2016054.jpg" alt="Alt text" style="width:200;"/>
+<img src="https://cf.geekdo-images.com/MWhSY_GOe2-bmlQ2rntSVg__itemrep/img/QRw3T5XGsrRs-QKCSpzwE7nFqOg=/fit-in/246x300/filters:strip_icc()/pic2016054.jpg" alt="Alt text" width="200"/>
 </div>
 
 ## Objective
@@ -19,7 +19,7 @@ Each game of Coup is simulated and played using a **Server**, a **Root Node** an
 
 
 <div style="text-align: center;">
-<img src="guide/network_diagram.png" alt="Alt text" style="width:300;"/>
+<img src="guide/network_diagram.png" alt="Alt text" width="300"/>
 </div>
 
 ### Server
