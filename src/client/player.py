@@ -1,33 +1,48 @@
 from comms.comms import Protocol, Parse
 from comms.comms import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE, ACTIONS, TARGET_ACTIONS  # Actions
 from comms.comms import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
+from terminal.terminal import Terminal
+import queue
 
 
 class Player:
     """
     Abstract class for a player in the game.
     """
-
+    
     def __init__(self):
         self.verbose = True
         self.ui = False
         self.is_root = False
-
-    def action(self):
+        
+        # Create a queue to send messages
+        self.checkout = queue.SimpleQueue()
+        
+        # Create a terminal to write messages manually
+        self.term = Terminal(self.checkout)
+    
+    def sender(self):
         """
-        Asks the player for a move and returns it.
-        Always called after update().
+        Gets a message from checkout and returns it.
 
         Returns:
-            _str_ | None -- message with the player's move
+            _str_ | None -- message
         """
+        try:
+            # Check if the terminal thread finished
+            if not self.term.signal:
+                print("Terminal closed.")
+                raise KeyboardInterrupt
+            
+            return self.checkout.get(timeout=1)
+        except queue.Empty:
+            print(end="")   # weird way to update the console buffer
+            return None
 
-        raise NotImplementedError
-
-    def update(self, message: str):
+    def receive(self, message: str):
         """
         Informs the player of a message.
-        Here, the player can update its knowledge and possibly plan the next move.
+        Here, the player may or may not reply to the message.
 
         Arguments:
             message {_str_} -- request/informative message
@@ -43,18 +58,10 @@ class Human(Player):
 
     def __init__(self):
         super().__init__()
+        self.verbose = True
         self.ui = True
-
-    def action(self):
-        while True:
-            try:
-                message = input("> ")
-                Parse(message)
-                return message
-            except SyntaxError as e:
-                print(e)
-
-    def update(self, message: str):
+        
+    def receive(self, message: str):
         print(message)
 
 
@@ -62,20 +69,24 @@ class RootPlayer(Player):
     """
     Root player class.
 
-    This player sends and receives addressed messages, e.g. addr|message
+    This player sends and receives addressed messages, e.g. [orig,dest]message
     """
 
     def __init__(self):
         super().__init__()
         self.verbose = True
-        self.ui = False
         self.is_root = True
-        self.msg = ""
 
-    def action(self):
+    def receive(self, addressed: str):
+        orig, message = self.parse(addressed)
+        
         # Simple echo for testing purposes
-        print(f"echo '{self.msg}'")
-        return self.msg
+        reply = f"{orig}]{message}"
+        self.checkout.put(reply)
+        print(f"echo '{reply}'")
 
-    def update(self, message: str):
-        self.msg = message
+    
+    def parse(self, addressed: str):
+        orig = int(addressed.split("]")[0][1:].split(",")[0])
+        message = addressed.split("]")[1]
+        return orig, message

@@ -3,6 +3,8 @@ import threading
 import sys
 
 
+DEFAULT_ADDR = True  # Use default address for messages
+
 class Client:
     def __init__(self, host="localhost", port=12345):
         self.host = host
@@ -141,9 +143,14 @@ class Client:
 
 if __name__ == "__main__":
     # Get host and port
-    host = input("Host (default 'localhost'): ") or "localhost"
-    port = input("Port (default '12345'): ")
-    port = int(port) if port else 12345
+    if DEFAULT_ADDR:
+        print("Using default address for messages.")
+        host = "localhost"
+        port = 12345
+    else:
+        host = input("Host (default 'localhost'): ") or "localhost"
+        port = input("Port (default '12345'): ") or "12345"
+        port = int(port)  # Ensure port is an integer
 
     # Create and run the client
     client = Client(host, port)

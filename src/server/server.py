@@ -28,14 +28,14 @@ class Client(threading.Thread):
                     # Pass the received data to the server for broadcasting
                     self.server.route_message(self, data)
                 else:
-                    print(f"Client {self.address} has disconnected")
+                    print(f"Client {self.id} has disconnected")
                     self.signal = False
                     self.server.remove_client(self)
                     break
             except (socket.timeout, UnicodeDecodeError):
                 continue
             except OSError:
-                print(f"Client {self.address} has disconnected")
+                print(f"Client {self.id} has disconnected")
                 self.signal = False
                 self.server.remove_client(self)
                 break

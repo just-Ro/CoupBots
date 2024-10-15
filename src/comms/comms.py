@@ -113,17 +113,14 @@ class Parse:
             self.sourceID = list[1]
 
         elif self.command == "CHAL":
-            if len(list) != 4:
-                raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
+            if len(list) != 2:
+                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
             self.sourceID = list[1]
-            self.targetID = list[2]
-            self.action = list[3]
 
         elif self.command == "BLOCK":
-            if len(list) != 4:
-                raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
+            if len(list) != 3:
+                raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
             self.sourceID = list[1]
-            self.action = list[2]
             self.card1 = list[3]
 
         elif self.command == "SHOW":
@@ -208,19 +205,18 @@ class Protocol:
             return f"ACT|{ID}|{ACTION}|{targetID}"
         return f"ACT|{ID}|{ACTION}"
 
-    def ALLOW(self, ID):
+    def ALLOW(self, ID: str):
         """Allow action"""
         return f"ALLOW|{ID}"
 
-    def CHAL(self, ID: str, targetID: str, ACTION: str):
+    def CHAL(self, ID: str):
         """Challenge action"""
-        self.__check__(ACTION=ACTION)
-        return f"CHAL|{ID}|{targetID}|{ACTION}"
+        return f"CHAL|{ID}"
 
-    def BLOCK(self, ID: str, ACTION: str, card1: str):
+    def BLOCK(self, ID: str, card1: str):
         """Block action"""
-        self.__check__(ACTION=ACTION, card1=card1)
-        return f"BLOCK|{ID}|{ACTION}|{card1}"
+        self.__check__(card1=card1)
+        return f"BLOCK|{ID}|{card1}"
 
     def SHOW(self, ID: str, card1: str):
         """Request card reveal"""

@@ -1,6 +1,5 @@
 from .client import Client
 from .player import Player, Human
-import queue
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -14,53 +13,47 @@ class CoupClient(Client):
         self.verbose = player.verbose
         self.ui = player.ui
 
-        # Create a queue for received messages
-        self.received_queue = queue.SimpleQueue()
+        
 
     def addr_root(self, message: str):
-        return f"0|{message}"
+        return f"0]{message}"
 
     def addr_strip(self, message: str):
-        return message.split("|", 1)[1]
+        return message.split("]")[1]
 
     def sender(self):
-        while self.signal:
-            try:
+        try:
+            while self.signal:
+                message = self.player.sender()
 
-                if not self.received_queue.empty():
-                    # Get a message from the queue
-                    message = self.received_queue.get()
-
-                    # Receive information/request
+                # Send the move to the server
+                if message:
                     if not self.player.is_root:
-                        # Strip message address
-                        message = self.addr_strip(message)
-                    self.player.update(message)
-
-                    # Ask player to make a move
-                    self.printui("Make your move.")
-                    message = self.player.action()
-
-                    # Send the move to the server
-                    if message is not None:
-                        if not self.player.is_root:
-                            # Add the root address
-                            message = self.addr_root(message)
-                        self.send(message)
-
-            except KeyboardInterrupt:
-                self.printv("Keyboard interrupt detected, closing connection.")
-                self.signal = False
-            except NotImplementedError as e:
-                self.printv("Method not implemented yet!")
-                e.args = ()
-                self.signal = False
-            except:
-                self.printv("Error in sender")
-                self.signal = False
+                        # Add the root address
+                        message = self.addr_root(message)
+                    self.send(message)
+                    
+        except KeyboardInterrupt:
+            self.printv("Keyboard interrupt detected, closing connection.")
+        except NotImplementedError:
+            self.printv("Method not implemented yet!")
+        except:
+            self.printv("Error in sender")
+        self.signal = False
 
     def receiver(self, message: str):
-        self.received_queue.put(message)
+        try:
+            # Strip message address
+            if not self.player.is_root:
+                message = self.addr_strip(message)
+            self.player.receive(message)
+            
+        except NotImplementedError:
+            self.printv("Method not implemented yet!")
+            self.signal = False
+        except Exception as e:
+            self.printv(f"Error in receiver: {e}")
+            self.signal = False
 
 
 def main():

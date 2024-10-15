@@ -14,20 +14,7 @@ class CoupBot(Player):
         self.verbose = True  # Error messages and connection status
         self.ui = False  # User interface like input prompts
 
-    def action(self):
-        # TODO
-        # Implement your bot here
-
-        # Use Protocol to create messages. Example:
-
-        # p = Protocol()
-        # return p.ACT("1", COUP, "2")
-
-        raise NotImplementedError
-
-        return None
-
-    def update(self, message: str):
+    def receive(self, message: str):
         # TODO
         # Implement your bot here
 
@@ -42,4 +29,12 @@ class CoupBot(Player):
         # target = m.targetID
         # coins = m.coins
 
+        # Use Protocol to create messages. Example:
+
+        # p = Protocol()
+        # m = p.ACT("1", COUP, "2")
+        
+        # Put the reply onto the checkout queue. Example:
+        # self.checkout.put(m)
+        
         raise NotImplementedError
