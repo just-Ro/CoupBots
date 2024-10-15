@@ -34,7 +34,7 @@ class Player:
                 print("Terminal closed.")
                 raise KeyboardInterrupt
             
-            return self.checkout.get(timeout=1)
+            return self.checkout.get(timeout=0.5)
         except queue.Empty:
             print(end="")   # weird way to update the console buffer
             return None
