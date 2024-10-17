@@ -69,18 +69,23 @@ WHAT HAPPENS WHEN 2 PLAYERS CHALLENGE/BLOCK AN ACTION AT THE SAME TIME????????
 --------------------------------------------------------------
 
 HOW DO I KNOW HOW MANY AND WHICH PLAYERS EXIST?
+- server sends many PLAYER|ID
 
 --------------------------------------------------------------
 
 HOW DO I KNOW IT'S MY TURN TO MAKE AN ACTION?
+- server sends TURN|ID
 
 --------------------------------------------------------------
 
 HOW DO I KNOW I LOST/WON THE GAME?
+- you lose when server sends END|ID
+- you win when server sends WIN|ID
 
 --------------------------------------------------------------
 
 HOW CAN I KNOW IF I PLAYED A WRONG/ILLEGAL MOVE?
+- server sends ILLEGAL|ID
 
 --------------------------------------------------------------
 

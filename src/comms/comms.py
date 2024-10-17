@@ -64,11 +64,11 @@ class Parse:
             SyntaxError: If the message violates the protocol
         """
         self.command = None
-        self.sourceID = None
+        self.ID1 = None
         self.card1 = None
         self.card2 = None
         self.action = None
-        self.targetID = None
+        self.ID2 = None
         self.coins = None
         self.parse(message)
 
@@ -86,7 +86,7 @@ class Parse:
         if self.command == "INIT":
             if len(list) != 5:
                 raise SyntaxError(f"Bad format in message '{message}': expected 5 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
             self.card2 = list[3]
             self.coins = list[4]
@@ -94,76 +94,76 @@ class Parse:
         elif self.command == "READY":
             if len(list) != 2:
                 raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
 
         elif self.command == "ACT":
             if len(list) < 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected at least 3 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.action = list[2]
 
             if self.action in TARGET_ACTIONS:
                 if len(list) != 4:
                     raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-                self.targetID = list[3]
+                self.ID2 = list[3]
 
         elif self.command == "ALLOW":
             if len(list) != 2:
                 raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
 
         elif self.command == "CHAL":
             if len(list) != 2:
                 raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
 
         elif self.command == "BLOCK":
             if len(list) != 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[3]
 
         elif self.command == "SHOW":
             if len(list) != 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
 
         elif self.command == "LOSE":
             if len(list) != 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
 
         elif self.command == "COINS":
             if len(list) != 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.coins = list[2]
 
         elif self.command == "END":
             if len(list) != 2:
                 raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
 
         elif self.command == "DECK":
             if len(list) != 4:
                 raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
             self.card2 = list[3]
 
         elif self.command == "CHOOSE":
             if len(list) != 4:
                 raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
             self.card2 = list[3]
 
         elif self.command == "KEEP":
             if len(list) != 4:
                 raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.sourceID = list[1]
+            self.ID1 = list[1]
             self.card1 = list[2]
             self.card2 = list[3]
 
@@ -176,10 +176,10 @@ class Parse:
             raise SyntaxError(f"Bad format in message '{message}': '{self.card1}' is not a valid card.")
         if self.card2 not in CHARACTERS and self.card2 != None:
             raise SyntaxError(f"Bad format in message '{message}': '{self.card2}' is not a valid card.")
-        if self.sourceID != None and not self.sourceID:
-            raise SyntaxError(f"Bad format in message '{message}': sourceID is missing.")
-        if self.targetID != None and not self.targetID:
-            raise SyntaxError(f"Bad format in message '{message}': targetID is missing.")
+        if self.ID1 != None and not self.ID1:
+            raise SyntaxError(f"Bad format in message '{message}': ID1 is missing.")
+        if self.ID2 != None and not self.ID2:
+            raise SyntaxError(f"Bad format in message '{message}': ID2 is missing.")
         if self.coins != None and not self.coins:
             raise SyntaxError(f"Bad format in message '{message}': coins is missing.")
 
@@ -189,68 +189,68 @@ class Protocol:
     Protocol class for the game.
     """
 
-    def INIT(self, ID: str, card1: str, card2: str, coins: int):
+    def INIT(self, ID1: str, card1: str, card2: str, coins: int):
         """Game initialization"""
         self.__check__(card1=card1, card2=card2, coins=coins)
-        return f"INIT|{ID}|{card1}|{card2}|{coins}"
+        return f"INIT|{ID1}|{card1}|{card2}|{coins}"
 
-    def READY(self, ID: str):
+    def READY(self, ID1: str):
         """Player ready"""
-        return f"READY|{ID}"
+        return f"READY|{ID1}"
 
-    def ACT(self, ID: str, ACTION: str, targetID: str = ""):
+    def ACT(self, ID1: str, ACTION: str, ID2: str = ""):
         """Player action"""
         self.__check__(ACTION=ACTION)
-        if targetID:
-            return f"ACT|{ID}|{ACTION}|{targetID}"
-        return f"ACT|{ID}|{ACTION}"
+        if ID2:
+            return f"ACT|{ID1}|{ACTION}|{ID2}"
+        return f"ACT|{ID1}|{ACTION}"
 
-    def ALLOW(self, ID: str):
+    def ALLOW(self, ID1: str):
         """Allow action"""
-        return f"ALLOW|{ID}"
+        return f"ALLOW|{ID1}"
 
-    def CHAL(self, ID: str):
+    def CHAL(self, ID1: str):
         """Challenge action"""
-        return f"CHAL|{ID}"
+        return f"CHAL|{ID1}"
 
-    def BLOCK(self, ID: str, card1: str):
+    def BLOCK(self, ID1: str, card1: str):
         """Block action"""
         self.__check__(card1=card1)
-        return f"BLOCK|{ID}|{card1}"
+        return f"BLOCK|{ID1}|{card1}"
 
-    def SHOW(self, ID: str, card1: str):
+    def SHOW(self, ID1: str, card1: str):
         """Request card reveal"""
         self.__check__(card1=card1)
-        return f"SHOW|{ID}|{card1}"
+        return f"SHOW|{ID1}|{card1}"
 
-    def LOSE(self, ID: str, card1: str):
+    def LOSE(self, ID1: str, card1: str):
         """Lose influence"""
         self.__check__(card1=card1)
-        return f"LOSE|{ID}|{card1}"
+        return f"LOSE|{ID1}|{card1}"
 
-    def COINS(self, ID: str, coins):
+    def COINS(self, ID1: str, coins):
         """Update coins"""
         self.__check__(coins=coins)
-        return f"COINS|{ID}|{coins}"
+        return f"COINS|{ID1}|{coins}"
 
-    def END(self, winnerID):
-        """Game end"""
-        return f"END|{winnerID}"
+    def END(self, ID1):
+        """Remove player from game"""
+        return f"END|{ID1}"
 
-    def DECK(self, ID: str, card1: str, card2: str):
+    def DECK(self, ID1: str, card1: str, card2: str):
         """Inform player of current deck"""
         self.__check__(card1=card1, card2=card2)
-        return f"DECK|{ID}|{card1}|{card2}"
+        return f"DECK|{ID1}|{card1}|{card2}"
 
-    def CHOOSE(self, ID: str, card1: str, card2: str):
+    def CHOOSE(self, ID1: str, card1: str, card2: str):
         """Ask player to choose cards to exchange"""
         self.__check__(card1=card1, card2=card2)
-        return f"CHOOSE|{ID}|{card1}|{card2}"
+        return f"CHOOSE|{ID1}|{card1}|{card2}"
 
-    def KEEP(self, ID: str, card1: str, card2: str):
+    def KEEP(self, ID1: str, card1: str, card2: str):
         """Player chooses which 2 cards to keep"""
         self.__check__(card1=card1, card2=card2)
-        return f"KEEP|{ID}|{card1}|{card2}"
+        return f"KEEP|{ID1}|{card1}|{card2}"
 
     def __check__(self, ACTION=None, card1=None, card2=None, coins=None):
         """
@@ -290,11 +290,11 @@ if __name__ == "__main__":
     try:
         m = Parse(message)
         print(m.command)
-        print(m.sourceID)
+        print(m.ID1)
         print(m.card1)
         print(m.card2)
         print(m.action)
-        print(m.targetID)
+        print(m.ID2)
         print(m.coins)
     except SyntaxError as e:
         print(e)

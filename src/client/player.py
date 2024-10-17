@@ -60,6 +60,7 @@ class Human(Player):
         super().__init__()
         self.verbose = True
         self.ui = True
+        self.checkout.put("HELLO")
         
     def receive(self, message: str):
         print(message)
