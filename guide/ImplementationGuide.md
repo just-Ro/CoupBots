@@ -49,7 +49,7 @@ The messages exchanged between the **Root Node** and the **Clients** are strings
 | `WIN\|ID1` | None |
 | `ILLEGAL\|ID1` | * |
 
-\* If a player receives `ILLEGAL\|ID1`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. If the player sends 2 illegal messages in a row, the **Root Node** replies with `END|ID` and the player is kicked from the game.
+\* If a player receives `ILLEGAL|ID1`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. If the player sends 2 illegal messages in a row, the **Root Node** replies with `END|ID` and the player is kicked from the game.
 
 ### **Client** can send to **Root Node**:
 | Send |
