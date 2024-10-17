@@ -78,7 +78,7 @@ To startup the game, there is a set of commands that must be used to initialize 
 3. Player receives `PLAYER|ID1` with its ID
 4. Root sends `START`
 5. Player receives `START`
-6. Player replies `READY\|ID1`
+6. Player replies `READY|ID1`
 7. Root replies `DECK|ID1|card1|card2`, `COINS|ID1|coins` and many `PLAYER|ID1`
 8. Player receives `DECK|ID1|card1|card2`, `COINS|ID1|coins` and many `PLAYER|ID1` with the other player's IDs
 9. Root sends `TURN|ID1`
