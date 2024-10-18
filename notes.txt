@@ -1,64 +1,4 @@
 --------------------------------------------------------------
-- Client can receive from root:
-
-INIT|ID|card1|card2|coins
-    reply:
-    - READY|ID
-
-SHOW|ID
-    reply:
-    - SHOW|ID|card
-
-LOSE|ID
-    reply:
-    - LOSE|ID|card
-
-COINS|ID|coins
-    don't reply
-
-END|winnerID
-    don't reply
-
-DECK|ID|card1|card2
-    don't reply
-
-CHOOSE|ID|card1|card2
-    reply:
-    - KEEP|ID|card1|card2
-
---------------------------------------------------------------
-- Client can send to root:
-
-READY|ID
-KEEP|ID|card1|card2
-
---------------------------------------------------------------
-- Client to client (can send/receive):
-
-ACT|ID|ACTION|targetID(optional)
-    reply:
-    - ALLOW|ID
-    - BLOCK|ID|ACTION|card
-    - CHAL|ID|targetID|card
-    
-ALLOW|ID
-    don't reply
-
-CHAL|ID|targetID|card
-    don't reply
-
-BLOCK|ID|ACTION|card
-    reply:
-    - ALLOW|ID
-    - CHAL|ID|targetID|card
-
-SHOW|ID|card
-    don't reply
-
-LOSE|ID|card
-    don't reply
-
---------------------------------------------------------------
 
 WHAT HAPPENS WHEN 2 PLAYERS CHALLENGE/BLOCK AN ACTION AT THE SAME TIME????????
 - server picks one randomly?    <- currently using this but subject to change
@@ -85,7 +25,7 @@ HOW DO I KNOW I LOST/WON THE GAME?
 --------------------------------------------------------------
 
 HOW CAN I KNOW IF I PLAYED A WRONG/ILLEGAL MOVE?
-- server sends ILLEGAL|ID
+- server sends ILLEGAL
 
 --------------------------------------------------------------
 
