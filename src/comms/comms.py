@@ -92,9 +92,8 @@ class Parse:
             self.coins = list[4]
 
         elif self.command == "READY":
-            if len(list) != 2:
-                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.ID1 = list[1]
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
 
         elif self.command == "ACT":
             if len(list) < 3:
@@ -124,16 +123,18 @@ class Parse:
             self.card1 = list[3]
 
         elif self.command == "SHOW":
-            if len(list) != 3:
-                raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
+            if len(list) != 1:
+                if len(list) != 3:
+                    raise SyntaxError(f"Bad format in message '{message}': expected 1 or 3 arguments, got {len(list)}.")
+                self.ID1 = list[1]
+                self.card1 = list[2]
 
         elif self.command == "LOSE":
-            if len(list) != 3:
-                raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
+            if len(list) != 1:
+                if len(list) != 3:
+                    raise SyntaxError(f"Bad format in message '{message}': expected 1 or 3 arguments, got {len(list)}.")
+                self.ID1 = list[1]
+                self.card1 = list[2]
 
         elif self.command == "COINS":
             if len(list) != 3:
@@ -147,25 +148,25 @@ class Parse:
             self.ID1 = list[1]
 
         elif self.command == "DECK":
-            if len(list) != 4:
-                raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
-            self.card2 = list[3]
+            if len(list) != 2: 
+                if len(list) != 3:
+                    raise SyntaxError(f"Bad format in message '{message}': expected 2 or 3 arguments, got {len(list)}.")
+                self.card2 = list[2]
+            self.card1 = list[1]
 
         elif self.command == "CHOOSE":
-            if len(list) != 4:
-                raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
-            self.card2 = list[3]
+            if len(list) != 2: 
+                if len(list) != 3:
+                    raise SyntaxError(f"Bad format in message '{message}': expected 2 or 3 arguments, got {len(list)}.")
+                self.card2 = list[2]
+            self.card1 = list[1]
 
         elif self.command == "KEEP":
-            if len(list) != 4:
-                raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
-            self.card2 = list[3]
+            if len(list) != 2: 
+                if len(list) != 3:
+                    raise SyntaxError(f"Bad format in message '{message}': expected 2 or 3 arguments, got {len(list)}.")
+                self.card2 = list[2]
+            self.card1 = list[1]
 
         else:
             raise SyntaxError(f"Bad format in message '{message}': '{self.command}' is not a valid command.")
@@ -194,9 +195,9 @@ class Protocol:
         self.__check__(card1=card1, card2=card2, coins=coins)
         return f"INIT|{ID1}|{card1}|{card2}|{coins}"
 
-    def READY(self, ID1: str):
+    def READY(self):
         """Player ready"""
-        return f"READY|{ID1}"
+        return f"READY"
 
     def ACT(self, ID1: str, ACTION: str, ID2: str = ""):
         """Player action"""
@@ -218,15 +219,19 @@ class Protocol:
         self.__check__(card1=card1)
         return f"BLOCK|{ID1}|{card1}"
 
-    def SHOW(self, ID1: str, card1: str):
+    def SHOW(self, ID1: str = "", card1: str = ""):
         """Request card reveal"""
-        self.__check__(card1=card1)
-        return f"SHOW|{ID1}|{card1}"
+        if ID1 and card1:
+            self.__check__(card1=card1)
+            return f"SHOW|{ID1}|{card1}"
+        return f"SHOW"
 
-    def LOSE(self, ID1: str, card1: str):
+    def LOSE(self, ID1: str = "", card1: str = ""):
         """Lose influence"""
-        self.__check__(card1=card1)
-        return f"LOSE|{ID1}|{card1}"
+        if ID1 and card1:
+            self.__check__(card1=card1)
+            return f"LOSE|{ID1}|{card1}"
+        return f"LOSE"
 
     def COINS(self, ID1: str, coins):
         """Update coins"""
@@ -237,20 +242,29 @@ class Protocol:
         """Remove player from game"""
         return f"END|{ID1}"
 
-    def DECK(self, ID1: str, card1: str, card2: str):
+    def DECK(self, card1: str, card2: str = ""):
         """Inform player of current deck"""
-        self.__check__(card1=card1, card2=card2)
-        return f"DECK|{ID1}|{card1}|{card2}"
+        self.__check__(card1=card1)
+        if card2:
+            self.__check__(card2=card2)
+            return f"DECK|{card1}|{card2}"
+        return f"DECK|{card1}"
 
-    def CHOOSE(self, ID1: str, card1: str, card2: str):
+    def CHOOSE(self, card1: str, card2: str = ""):
         """Ask player to choose cards to exchange"""
-        self.__check__(card1=card1, card2=card2)
-        return f"CHOOSE|{ID1}|{card1}|{card2}"
+        self.__check__(card1=card1)
+        if card2:
+            self.__check__(card2=card2)
+            return f"CHOOSE|{card1}|{card2}"
+        return f"CHOOSE|{card1}"
 
-    def KEEP(self, ID1: str, card1: str, card2: str):
+    def KEEP(self, card1: str, card2: str = ""):
         """Player chooses which 2 cards to keep"""
-        self.__check__(card1=card1, card2=card2)
-        return f"KEEP|{ID1}|{card1}|{card2}"
+        self.__check__(card1=card1)
+        if card2:
+            self.__check__(card2=card2)
+            return f"KEEP|{card1}|{card2}"
+        return f"KEEP|{card1}"
 
     def __check__(self, ACTION=None, card1=None, card2=None, coins=None):
         """
