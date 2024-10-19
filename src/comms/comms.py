@@ -1,36 +1,3 @@
-"""
-INIT|ID|card1|card2|coins                        // Game Initialization: ID = Player ID, card1 = First card, card2 = Second card, coins = Initial coin count
-READY|ID                                         // Player Ready: ID = Player ID
-ACT|ID|ACTION|targetID(optional)                 // Player Action: ID = Player ID, ACTION = Action type, targetID = Target Player ID (if applicable)
-ALLOW|ID                                         // Allow Action: ID = Player ID allowing an action to proceed (no block, no challenge)
-CHAL|ID|targetID|ACTION                          // Challenge Action: ID = Challenger Player ID, targetID = Player performing action, ACTION = Action being challenged
-BLOCK|ID|ACTION|CARD                             // Block Action: ID = Blocking Player ID, ACTION = Action being blocked, CARD = Character used to block
-SHOW|ID|card                                     // Request Card Reveal: ID = Player ID, card = Character card to reveal
-LOSE|ID|card                                     // Lose Influence: ID = Player ID, card = Character card lost
-COINS|ID|coins                                   // Update Coins: ID = Player ID, coins = Current coin count
-END|winnerID                                     // Game End: winnerID = Player ID of the winner
-DECK|ID|card1|card2                              // Inform Player of Current Deck: ID = Player ID, card1 = First card, card2 = Second card
-CHOOSE|ID|card1|card2                            // Ask Player to Choose Cards to Exchange: ID = Player ID, card1 = First card to choose, card2 = Second card to choose
-KEEP|ID|card1|card2                              // Player Chooses Which 2 Cards to Keep: ID = Player ID, card1 = First card to keep, card2 = Second card to keep
-
----
-
-### Actions (ACTION code)
-I    // Income
-F    // Foreign Aid
-C    // Coup
-T    // Tax (Duke)
-A    // Assassinate (Assassin)
-S    // Steal (Captain)
-X    // Exchange (Ambassador)
-
-### Character Codes (card code)
-D    // Duke
-A    // Assassin
-C    // Contessa
-Cp   // Captain
-Am   // Ambassador
-"""
 
 # Actions
 INCOME = "I"
@@ -82,20 +49,7 @@ class Parse:
         # Get the command
         self.command = list[0]
 
-        # Get the command arguments
-        if self.command == "INIT":
-            if len(list) != 5:
-                raise SyntaxError(f"Bad format in message '{message}': expected 5 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-            self.card1 = list[2]
-            self.card2 = list[3]
-            self.coins = list[4]
-
-        elif self.command == "READY":
-            if len(list) != 1:
-                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
-
-        elif self.command == "ACT":
+        if self.command == "ACT":
             if len(list) < 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected at least 3 arguments, got {len(list)}.")
             self.ID1 = list[1]
@@ -142,11 +96,6 @@ class Parse:
             self.ID1 = list[1]
             self.coins = list[2]
 
-        elif self.command == "END":
-            if len(list) != 2:
-                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-
         elif self.command == "DECK":
             if len(list) != 2: 
                 if len(list) != 3:
@@ -167,6 +116,42 @@ class Parse:
                     raise SyntaxError(f"Bad format in message '{message}': expected 2 or 3 arguments, got {len(list)}.")
                 self.card2 = list[2]
             self.card1 = list[1]
+
+        elif self.command == "HELLO":
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
+        
+        elif self.command == "PLAYER":
+            if len(list) != 2:
+                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
+            self.ID1 = list[1]
+            
+        elif self.command == "START":
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
+        
+        elif self.command == "READY":
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
+
+        elif self.command == "TURN":
+            if len(list) != 2:
+                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
+            self.ID1 = list[1]
+
+        elif self.command == "END":
+            if len(list) != 2:
+                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
+            self.ID1 = list[1]
+
+        elif self.command == "WIN":
+            if len(list) != 2:
+                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
+            self.ID1 = list[1]
+        
+        elif self.command == "ILLEGAL":
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
 
         else:
             raise SyntaxError(f"Bad format in message '{message}': '{self.command}' is not a valid command.")
@@ -190,14 +175,6 @@ class Protocol:
     Protocol class for the game.
     """
 
-    def INIT(self, ID1: str, card1: str, card2: str, coins: int):
-        """Game initialization"""
-        self.__check__(card1=card1, card2=card2, coins=coins)
-        return f"INIT|{ID1}|{card1}|{card2}|{coins}"
-
-    def READY(self):
-        """Player ready"""
-        return f"READY"
 
     def ACT(self, ID1: str, ACTION: str, ID2: str = ""):
         """Player action"""
@@ -238,10 +215,6 @@ class Protocol:
         self.__check__(coins=coins)
         return f"COINS|{ID1}|{coins}"
 
-    def END(self, ID1):
-        """Remove player from game"""
-        return f"END|{ID1}"
-
     def DECK(self, card1: str, card2: str = ""):
         """Inform player of current deck"""
         self.__check__(card1=card1)
@@ -265,6 +238,38 @@ class Protocol:
             self.__check__(card2=card2)
             return f"KEEP|{card1}|{card2}"
         return f"KEEP|{card1}"
+
+    def HELLO(self):
+        """Hello message"""
+        return f"HELLO"
+    
+    def PLAYER(self, ID1: str):
+        """Player joined game"""
+        return f"PLAYER|{ID1}"
+    
+    def START(self):
+        """Start game"""
+        return f"START"
+
+    def READY(self):
+        """Player ready"""
+        return f"READY"
+    
+    def TURN(self, ID1: str):
+        """Player's turn"""
+        return f"TURN|{ID1}"
+
+    def END(self, ID1):
+        """Remove player from game"""
+        return f"END|{ID1}"
+
+    def WIN(self, ID1):
+        """Player wins game"""
+        return f"WIN|{ID1}"
+    
+    def ILLEGAL(self):
+        """Illegal action"""
+        return f"ILLEGAL"
 
     def __check__(self, ACTION=None, card1=None, card2=None, coins=None):
         """
@@ -295,7 +300,7 @@ if __name__ == "__main__":
     # Test the Protocol class
     p = Protocol()
     try:
-        print(p.INIT("P1", "D", "Cp", 2))
+        print(p.ACT("1", COUP, "2"))
     except SyntaxError as e:
         print(e)
 

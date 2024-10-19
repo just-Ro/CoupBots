@@ -1,6 +1,6 @@
 from server.coup_server import CoupServer
 from client.coup_client import CoupClient
-from client.player import RootPlayer
+from client.root import TestRoot, Root
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -22,7 +22,8 @@ def main():
     server = CoupServer(host, port, SERVER_VERBOSE)
 
     # Create client
-    player = RootPlayer()
+    player = TestRoot() # Use for manual testing
+    # player = Root() # Still unfinished
     client = CoupClient(host, port, player)
 
     try:

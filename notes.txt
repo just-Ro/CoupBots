@@ -36,3 +36,12 @@ HOW CAN I KNOW IF I PLAYED A WRONG/ILLEGAL MOVE?
 
 2. mostrar porque ganhou challenge
     neste caso todos têm que ver SHOW|ID|card
+
+--------------------------------------------------------------
+TESTS
+
+- test if a player can target himself in an action
+- test if a player can target a player that is already dead
+
+--------------------------------------------------------------
+

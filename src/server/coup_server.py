@@ -4,63 +4,74 @@ import threading
 
 
 DEFAULT_ADDR = True  # Use default address for messages
-
+ROOT_ADDR = 0
 
 class CoupServer(Server):
     def __init__(self, host="localhost", port=12345, verbose=True):
         super().__init__(host, port, verbose)
 
-    def route_message(self, sender: Client, message: bytes):
+    def route_message(self, sender: Client, addr_message: bytes):
         """Route a message based on its format."""
-        message_str = message.decode("utf-8")
-        if message_str.find("]") >= 0:
-            dest = int(message_str.split("]")[0])
+        addr_message_str = addr_message.decode("utf-8")
+        invert_addr = False
+        
+        # If the message is not addressed, address it to root
+        if "@" in addr_message_str:
+            addr, message_str = addr_message_str.split("@", 1)
+            dest = int(addr.strip("-"))
+            if addr.startswith("-"):
+                invert_addr = True
         else:
-            dest = 0
-            message_str = f"0]{message_str}"
+            dest = ROOT_ADDR
+            message_str = addr_message_str
 
-        # If the first part is an integer, process it accordingly
-        try:
-            # Direct message to a specific client
-            if dest >= 0:
-                self.printv(f"Sending message to ID {dest}.")
-                self.send_to_client(dest, sender, message_str)
+        if invert_addr:
             # Broadcast to everyone except sender and the client with the specified ID
-            else:
-                self.printv(f"Broadcasting except ID {dest}.")
-                self.broadcast_except(sender, message_str, exclude_client_id=abs(dest))
-        except ValueError:
-            # If the first part is not an integer, it's a normal broadcast
-            self.printv("Untagged message. Broadcasting.")
-            self.broadcast_except(sender, message_str)
-
-    def broadcast_except(self, sender: Client, message: str, exclude_client_id=None):
+            self.printv(f"Broadcasting except ID {dest}.")
+            self.broadcast_except(sender, message_str, dest)
+        else:
+            # Direct message to a specific client
+            self.printv(f"Sending message to ID {dest}.")
+            self.send_to_client(sender, message_str, dest)
+            
+        
+    def broadcast_except(self, sender: Client, message: str, exclude_client_id: int):
         """Broadcast the message to all clients except the sender and optionally exclude a specific client."""
         self.printv(f"Broadcasting from ID {sender.id}: {message}")
+        
+        # Add origin address to the message
+        addr_message = f"{sender.id}@{message}"
+        
+        # Broadcast
         for client in self.connections:
             if client.id != sender.id and client.id != exclude_client_id:
                 try:
-                    # Add the sender ID to the message
-                    msg_with_origin = f"[{sender.id},{message}"
-                    client.socket.sendall(msg_with_origin.encode("utf-8"))
+                    client.socket.sendall(addr_message.encode("utf-8"))
                 except OSError:
                     self.remove_client(client)
 
-    def send_to_client(self, client_id: int, sender: Client, message: str):
+    def send_to_client(self, sender: Client, message: str, client_id: int):
         """Send a message to a specific client identified by client_id."""
         self.printv(f"Sending message to client {client_id} from ID {sender.id}: {message}")
+        
+        # Check if client is addressing itself
         if client_id == sender.id:
             self.printv("Client addressed itself.")
             return
+        
+        # Add origin address to the message
+        addr_message = f"{sender.id}@{message}"
+        
+        # Find the client with the specified ID
         for client in self.connections:
             if client.id != sender.id and client.id == client_id:
                 try:
-                    # Add the sender ID to the message
-                    msg_with_origin = f"[{sender.id},{message}"
-                    client.socket.sendall(msg_with_origin.encode("utf-8"))
+                    client.socket.sendall(addr_message.encode("utf-8"))
                 except OSError:
                     self.remove_client(client)
                 return
+        
+        # Client not found
         self.printv(f"Client with ID {client_id} not found.")
 
 

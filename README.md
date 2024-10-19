@@ -19,7 +19,7 @@ Each game of Coup is simulated and played using a **Server**, a **Root Node** an
 
 
 <div style="text-align: center;">
-<img src="guide/network_diagram.png" alt="Alt text" width="300"/>
+<img src="network_diagram.png" alt="Alt text" width="300"/>
 </div>
 
 ### Server
@@ -87,7 +87,7 @@ Below is the full list of the accepted Protocol messages.
 | Receive | Reply |
 |---------|-------|
 | `CHOOSE\|card1\|card2` | `KEEP\|card1\|card2` |
-| `TURN\|ID1` | `ACT\|ID1\|ACTION\|ID2` * |
+| `TURN\|ID1` | None, `ACT\|ID1\|ACTION\|ID2` * |
 | `SHOW` | `SHOW\|ID1\|card` |
 | `LOSE` | `LOSE\|ID1\|card` |
 | `START` | `READY` |
@@ -113,7 +113,7 @@ Below is the full list of the accepted Protocol messages.
 | Receive | Reply |
 |---------|-------|
 | `ACT\|ID1\|ACTION\|ID2` | `ALLOW\|ID1`, `CHAL\|ID1`, `BLOCK\|ID1\|card` |
-| `BLOCK\|ID1\|card` | `CHAL\|ID1` |
+| `BLOCK\|ID1\|card` | `ALLOW\|ID1`, `CHAL\|ID1` |
 | `CHAL\|ID1` | None |
 | `ALLOW\|ID1` | None |
 | `SHOW\|ID1\|card` | None |
@@ -125,11 +125,12 @@ To startup the game, there is a set of commands that must be used to initialize 
 
 0. Root starts
 1. Player connects 
-2. Root <- Player: `HELLO`
-3. Root -> Player: `PLAYER|ID1`
-4. Root -> Player: `START` (this command is sent manually)
-5. Root <- Player: `READY`
-6. Root -> Player: `DECK|card1|card2`
-7. Root -> Player: `COINS|ID1|coins`
-8. Root -> Player: `PLAYER|ID1`, `PLAYER|ID1`, ...
-9. Root -> Player: `TURN|ID1`
+2. Player ---> Root: `HELLO`
+3. Player <--- Root: `PLAYER|ID1`
+4. Player <--- Root: `START` (this command is sent manually)
+5. Player ---> Root: `READY`
+6. Player <--- Root: `DECK|card1|card2`
+7. Player <--- Root: `COINS|ID1|coins`
+8. Player <--- Root: `PLAYER|ID1`, `PLAYER|ID1`, ...
+9. Player <--- Root: `TURN|ID1`
+

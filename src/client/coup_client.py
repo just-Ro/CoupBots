@@ -3,6 +3,7 @@ from .player import Player, Human
 
 
 DEFAULT_ADDR = True  # Use default address for messages
+ROOT_ADDR = 0
 
 class CoupClient(Client):
     def __init__(self, host, port, player: Player):
@@ -16,10 +17,10 @@ class CoupClient(Client):
         
 
     def addr_root(self, message: str):
-        return f"0]{message}"
+        return f"{ROOT_ADDR}@{message}"
 
     def addr_strip(self, message: str):
-        return message.split("]")[1]
+        return message.split("@")[1]
 
     def sender(self):
         try:

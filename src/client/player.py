@@ -64,30 +64,3 @@ class Human(Player):
         
     def receive(self, message: str):
         print(message)
-
-
-class RootPlayer(Player):
-    """
-    Root player class.
-
-    This player sends and receives addressed messages, e.g. [orig,dest]message
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.verbose = True
-        self.is_root = True
-
-    def receive(self, addressed: str):
-        orig, message = self.parse(addressed)
-        
-        # Simple echo for testing purposes
-        reply = f"{orig}]{message}"
-        self.checkout.put(reply)
-        print(f"echo '{reply}'")
-
-    
-    def parse(self, addressed: str):
-        orig = int(addressed.split("]")[0][1:].split(",")[0])
-        message = addressed.split("]")[1]
-        return orig, message
