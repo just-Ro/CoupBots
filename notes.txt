@@ -44,4 +44,20 @@ TESTS
 - test if a player can target a player that is already dead
 
 --------------------------------------------------------------
+# Actions
+INCOME      
+FOREIGN_AID 
+COUP        
+TAX         
+ASSASSINATE 
+STEAL       
+EXCHANGE    
 
+--------------------------------------------------------------
+root state machine
+
+states: 
+init - before receiving any messages
+
+
+init -> 

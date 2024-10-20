@@ -135,33 +135,6 @@ class PlayerState:
         self.possible_messages = messages
 
 
-class TestRoot(Player):
-    def __init__(self):
-        super().__init__()
-        self.verbose = True
-        self.is_root = True
-        self.players: dict[str, PlayerState] = {}
-        self.deck = [*CHARACTERS, *CHARACTERS, *CHARACTERS]
-    
-    def receive(self, addressed: str):
-        orig, message = self.parse_addr(addressed)
-        if orig is None:
-            print(f"ID?? -> {message}")
-            return
-        print(f"ID{int(orig):02d} <- {message}")
-        
-    def send(self, msg: str, dest: str):
-        print(f"ID{int(dest):02d} <- {msg}")
-        self.checkout.put(self.address_to(msg, dest))
-    
-    def address_to(self, msg: str, dest: str, invert=False):
-        return f"{'-' if invert else ''}{dest}@{msg}"
-    
-    def parse_addr(self, msg: str):
-        if "@" in msg:
-            return msg.split("@", 1)
-        return None, msg
-
 class Root(Player):
     """
     Root player class.
@@ -183,8 +156,6 @@ class Root(Player):
             print(f"ID?? -> {message}")
             return
         
-        # self.send(message, orig)
-        # return
         
         # Parse the message
         try:
@@ -220,6 +191,34 @@ class Root(Player):
                 return
                 
             
+        
+    def send(self, msg: str, dest: str):
+        print(f"ID{int(dest):02d} <- {msg}")
+        self.checkout.put(self.address_to(msg, dest))
+    
+    def address_to(self, msg: str, dest: str, invert=False):
+        return f"{'-' if invert else ''}{dest}@{msg}"
+    
+    def parse_addr(self, msg: str):
+        if "@" in msg:
+            return msg.split("@", 1)
+        return None, msg
+
+
+class TestRoot(Player):
+    def __init__(self):
+        super().__init__()
+        self.verbose = True
+        self.is_root = True
+        self.players: dict[str, PlayerState] = {}
+        self.deck = [*CHARACTERS, *CHARACTERS, *CHARACTERS]
+    
+    def receive(self, addressed: str):
+        orig, message = self.parse_addr(addressed)
+        if orig is None:
+            print(f"ID?? -> {message}")
+            return
+        print(f"ID{int(orig):02d} <- {message}")
         
     def send(self, msg: str, dest: str):
         print(f"ID{int(dest):02d} <- {msg}")
