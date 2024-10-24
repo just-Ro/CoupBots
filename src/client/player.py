@@ -50,6 +50,9 @@ class Player:
         """
         raise NotImplementedError
 
+    def printv(self, string: str):
+        if self.verbose:
+            print(string)
 
 class Human(Player):
     """
@@ -63,4 +66,4 @@ class Human(Player):
         self.checkout.put("HELLO")
         
     def receive(self, message: str):
-        print(message)
+        self.printv(message)

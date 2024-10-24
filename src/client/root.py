@@ -156,16 +156,16 @@ class Root(Player):
         # Split origin address from the message 
         orig, message, _ = pop_addr(addressed)
         if orig is None:
-            print(f"ID?? -> {message}")
+            self.printv(f"\033[31mID?? -> {message}\033[m")
             return
         
         # Parse the message
         try:
             m = Parse(message)
-            print(f"ID{orig:02d} -> {message}")
+            self.printv(f"ID{orig:02d} -> {message}")
         except SyntaxError:
             # Player message breaks Protocol
-            print(f"ID{orig:02d} -> {message}")
+            self.printv(f"\033[31mID{orig:02d} -> {message}\033[m")
             self.send(p.ILLEGAL(), orig)
             return
         
@@ -191,7 +191,7 @@ class Root(Player):
                 
             
     def send(self, msg: str, dest: str):
-        print(f"ID{int(dest):02d} <- {msg}")
+        self.printv(f"ID{int(dest):02d} <- {msg}")
         self.checkout.put(put_addr(msg, dest))
 
 
@@ -206,11 +206,11 @@ class TestRoot(Player):
     def receive(self, addressed: str):
         orig, message, _ = pop_addr(addressed)
         if orig is None:
-            print(f"ID?? -> {message}")
+            self.printv(f"ID?? -> {message}")
             return
-        print(f"ID{int(orig):02d} <- {message}")
+        self.printv(f"ID{int(orig):02d} <- {message}")
         
     def send(self, msg: str, dest: str):
-        print(f"ID{int(dest):02d} <- {msg}")
+        self.printv(f"ID{int(dest):02d} <- {msg}")
         self.checkout.put(put_addr(msg, dest))
     
