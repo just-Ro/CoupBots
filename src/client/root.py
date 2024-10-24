@@ -1,9 +1,10 @@
 from comms.comms import Protocol, Parse
 from comms.comms import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE, ACTIONS, TARGET_ACTIONS  # Actions
 from comms.comms import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
+from comms.comms import put_addr, pop_addr
 from .player import Player
 
-NO_REPLY = 0
+IDLE = 0
 CHOOSE = 1
 TURN = 2
 SHOW = 3
@@ -11,6 +12,7 @@ LOSE = 4
 START = 5
 ACTION = 6
 BLOCK = 7
+CHAL = 8
 p = Protocol()
 
 class PlayerState:
@@ -28,8 +30,8 @@ class PlayerState:
         self.turn = False
 
         # When waiting for a certain reply
-        # Possible messages to reply to: NO_REPLY, CHOOSE, TURN, SHOW, LOSE, START, ACTION, BLOCK
-        self.reply_to = NO_REPLY
+        # Possible messages to reply to: IDLE, CHOOSE, TURN, SHOW, LOSE, START, ACTION, BLOCK
+        self.state = IDLE
         self.possible_messages = []
     
     
@@ -38,10 +40,10 @@ class PlayerState:
         Generates a list of possible messages to send.
         """
         # Update reply_to
-        self.reply_to = reply
+        self.state = reply
         
         # If the player is dead or can't reply, they can't send any messages
-        if not self.alive or self.reply_to == NO_REPLY:
+        if not self.alive or self.state == IDLE:
             self.possible_messages = []
             return
         
@@ -60,7 +62,7 @@ class PlayerState:
             return
         
         # Choose cards after Exchange action
-        if self.reply_to == CHOOSE:
+        if self.state == CHOOSE:
             options = self.cards + self.exchange_cards
             
             # Player only has 1 card left alive
@@ -76,7 +78,7 @@ class PlayerState:
                             messages.append(p.KEEP(card1, card2))
 
         # Choose an action to perform on its turn
-        elif self.reply_to == TURN and self.turn:
+        elif self.state == TURN and self.turn:
             for action in ACTIONS:
                 if action in TARGET_ACTIONS:
                     
@@ -95,21 +97,21 @@ class PlayerState:
                     messages.append(p.ACT(self.id, action))
         
         # Choose a card to show
-        elif self.reply_to == SHOW:
+        elif self.state == SHOW:
             for card in self.cards:
                 messages.append(p.SHOW(self.id, card))
         
         # Choose a card to lose
-        elif self.reply_to == LOSE:
+        elif self.state == LOSE:
             for card in self.cards:
                 messages.append(p.LOSE(self.id, card))
         
         # Wait for all players to be ready
-        elif self.reply_to == START:
+        elif self.state == START:
             messages.append(p.READY())
         
         # Choose an action to perform in response to another player's action
-        elif self.reply_to == ACTION:
+        elif self.state == ACTION:
             # Allow the action
             messages.append(p.ALLOW(self.id))
             
@@ -127,7 +129,7 @@ class PlayerState:
                 messages.append(p.BLOCK(self.id, AMBASSADOR))
         
         # Choose to either allow or challenge another player's block
-        elif self.reply_to == BLOCK:
+        elif self.state == BLOCK:
             messages.append(p.ALLOW(self.id))
             messages.append(p.CHAL(self.id))
         
@@ -148,14 +150,14 @@ class Root(Player):
         self.is_root = True
         self.players: dict[str, PlayerState] = {}
         self.deck = [*CHARACTERS, *CHARACTERS, *CHARACTERS]
+        self.state = IDLE
         
     def receive(self, addressed: str):
         # Split origin address from the message 
-        orig, message = self.parse_addr(addressed)
+        orig, message, _ = pop_addr(addressed)
         if orig is None:
             print(f"ID?? -> {message}")
             return
-        
         
         # Parse the message
         try:
@@ -164,45 +166,33 @@ class Root(Player):
         except SyntaxError:
             # Player message breaks Protocol
             print(f"ID{orig:02d} -> {message}")
-            reply = p.ILLEGAL()
-            self.send(reply, orig)
+            self.send(p.ILLEGAL(), orig)
             return
         
         # Create a state for the player for the first time
         if m.command == "HELLO":
             if orig not in self.players.keys():
                 self.players[orig] = (PlayerState(orig, self))
-                reply = p.PLAYER(str(orig))
-                self.send(reply, orig)
+                self.send(p.PLAYER(str(orig)), orig)
             return
         
         player = self.players[orig]
         if player is None:
             return
         
-        if player.reply_to == NO_REPLY:
-            reply = p.ILLEGAL()
-            self.send(reply, orig)
+        if player.state == IDLE:
+            self.send(p.ILLEGAL(), orig)
             return
         
-        if player.reply_to == START:
+        if player.state == START:
             if m.command == "READY":
-                player.generate_answers(NO_REPLY)
+                player.generate_answers(IDLE)
                 return
                 
             
-        
     def send(self, msg: str, dest: str):
         print(f"ID{int(dest):02d} <- {msg}")
-        self.checkout.put(self.address_to(msg, dest))
-    
-    def address_to(self, msg: str, dest: str, invert=False):
-        return f"{'-' if invert else ''}{dest}@{msg}"
-    
-    def parse_addr(self, msg: str):
-        if "@" in msg:
-            return msg.split("@", 1)
-        return None, msg
+        self.checkout.put(put_addr(msg, dest))
 
 
 class TestRoot(Player):
@@ -214,7 +204,7 @@ class TestRoot(Player):
         self.deck = [*CHARACTERS, *CHARACTERS, *CHARACTERS]
     
     def receive(self, addressed: str):
-        orig, message = self.parse_addr(addressed)
+        orig, message, _ = pop_addr(addressed)
         if orig is None:
             print(f"ID?? -> {message}")
             return
@@ -222,12 +212,5 @@ class TestRoot(Player):
         
     def send(self, msg: str, dest: str):
         print(f"ID{int(dest):02d} <- {msg}")
-        self.checkout.put(self.address_to(msg, dest))
+        self.checkout.put(put_addr(msg, dest))
     
-    def address_to(self, msg: str, dest: str, invert=False):
-        return f"{'-' if invert else ''}{dest}@{msg}"
-    
-    def parse_addr(self, msg: str):
-        if "@" in msg:
-            return msg.split("@", 1)
-        return None, msg

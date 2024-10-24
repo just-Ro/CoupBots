@@ -1,4 +1,5 @@
 from .server import Server, Client
+from comms.comms import pop_addr, put_addr
 import socket
 import threading
 
@@ -13,17 +14,13 @@ class CoupServer(Server):
     def route_message(self, sender: Client, addr_message: bytes):
         """Route a message based on its format."""
         addr_message_str = addr_message.decode("utf-8")
-        invert_addr = False
-        
+
         # If the message is not addressed, address it to root
-        if "@" in addr_message_str:
-            addr, message_str = addr_message_str.split("@", 1)
-            dest = int(addr.strip("-"))
-            if addr.startswith("-"):
-                invert_addr = True
-        else:
+        addr, message_str, invert_addr = pop_addr(addr_message_str)
+        if addr is None:
             dest = ROOT_ADDR
-            message_str = addr_message_str
+        else:
+            dest = int(addr)
 
         if invert_addr:
             # Broadcast to everyone except sender and the client with the specified ID
@@ -40,7 +37,7 @@ class CoupServer(Server):
         self.printv(f"Broadcasting from ID {sender.id}: {message}")
         
         # Add origin address to the message
-        addr_message = f"{sender.id}@{message}"
+        addr_message = put_addr(sender.id, message)
         
         # Broadcast
         for client in self.connections:
@@ -60,7 +57,7 @@ class CoupServer(Server):
             return
         
         # Add origin address to the message
-        addr_message = f"{sender.id}@{message}"
+        addr_message = put_addr(sender.id, message)
         
         # Find the client with the specified ID
         for client in self.connections:

@@ -74,7 +74,7 @@ class Parse:
             if len(list) != 3:
                 raise SyntaxError(f"Bad format in message '{message}': expected 3 arguments, got {len(list)}.")
             self.ID1 = list[1]
-            self.card1 = list[3]
+            self.card1 = list[2]
 
         elif self.command == "SHOW":
             if len(list) != 1:
@@ -293,6 +293,44 @@ class Protocol:
         if coins and not (isinstance(coins, int) and coins >= 0):
             raise SyntaxError(f"Bad format in message: '{coins}' is not a valid coin count.")
 
+
+
+def put_addr(msg: str, addr: str, invert=False):
+    """
+    Append the address to a non-addressed message
+
+    Arguments:
+        msg {str} -- non-addressed message
+        addr {str} -- address ID
+
+    Keyword Arguments:
+        invert {bool} -- False: address `addr`; True: broadcast all except `addr` (default: {False})
+
+    Returns:
+        str -- addressed message
+    """
+    return f"{'-' if invert else ''}{addr}@{msg}"
+
+def pop_addr(msg: str):
+    """
+    Split the address from the message
+
+    Arguments:
+        msg {str} -- message
+
+    Returns:
+        tuple(addr, msg, invert):
+            - `addr` is str or None if the message does not contain an address;
+            - `msg` is the original message or the message without the address;
+            - `invert` is True if the address is inverted
+    """
+    addr = None
+    invert = False
+    if "@" in msg:
+        addr = msg.split("@", 1)[0]
+        invert = addr.startswith("-")
+        addr.strip("-")
+    return addr, msg, invert
 
 # Testing purposes
 if __name__ == "__main__":
