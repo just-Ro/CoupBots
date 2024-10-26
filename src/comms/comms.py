@@ -60,10 +60,9 @@ class Parse:
                     raise SyntaxError(f"Bad format in message '{message}': expected 4 arguments, got {len(list)}.")
                 self.ID2 = list[3]
 
-        elif self.command == "ALLOW":
-            if len(list) != 2:
-                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.ID1 = list[1]
+        elif self.command == "OK":
+            if len(list) != 1:
+                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
 
         elif self.command == "CHAL":
             if len(list) != 2:
@@ -129,26 +128,12 @@ class Parse:
         elif self.command == "START":
             if len(list) != 1:
                 raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
-        
-        elif self.command == "READY":
-            if len(list) != 1:
-                raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
 
         elif self.command == "TURN":
             if len(list) != 2:
                 raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
             self.ID1 = list[1]
 
-        elif self.command == "END":
-            if len(list) != 2:
-                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-
-        elif self.command == "WIN":
-            if len(list) != 2:
-                raise SyntaxError(f"Bad format in message '{message}': expected 2 arguments, got {len(list)}.")
-            self.ID1 = list[1]
-        
         elif self.command == "ILLEGAL":
             if len(list) != 1:
                 raise SyntaxError(f"Bad format in message '{message}': expected 1 argument, got {len(list)}.")
@@ -183,9 +168,9 @@ class Protocol:
             return f"ACT|{ID1}|{ACTION}|{ID2}"
         return f"ACT|{ID1}|{ACTION}"
 
-    def ALLOW(self, ID1: str):
+    def OK(self):
         """Allow action"""
-        return f"ALLOW|{ID1}"
+        return f"OK"
 
     def CHAL(self, ID1: str):
         """Challenge action"""
@@ -251,22 +236,10 @@ class Protocol:
         """Start game"""
         return f"START"
 
-    def READY(self):
-        """Player ready"""
-        return f"READY"
-    
     def TURN(self, ID1: str):
         """Player's turn"""
         return f"TURN|{ID1}"
 
-    def END(self, ID1):
-        """Remove player from game"""
-        return f"END|{ID1}"
-
-    def WIN(self, ID1):
-        """Player wins game"""
-        return f"WIN|{ID1}"
-    
     def ILLEGAL(self):
         """Illegal action"""
         return f"ILLEGAL"
