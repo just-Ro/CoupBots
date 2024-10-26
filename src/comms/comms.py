@@ -18,6 +18,9 @@ DUKE = "D"
 CONTESSA = "E"
 CHARACTERS = (DUKE, ASSASSIN, CONTESSA, CAPTAIN, AMBASSADOR)
 
+# Connection
+DISCONNECTION = "EXIT"
+
 
 class Parse:
     def __init__(self, message: str):
@@ -297,13 +300,10 @@ def pop_addr(msg: str):
             - `msg` is the original message or the message without the address;
             - `invert` is True if the address is inverted
     """
-    addr = None
-    invert = False
+
     if "@" in msg:
-        addr = msg.split("@", 1)[0]
-        invert = addr.startswith("-")
-        addr.strip("-")
-    return addr, msg, invert
+        return msg.split("@", 1)[0].strip("-"), msg.split("@", 1)[1], msg.startswith("-")
+    return None, msg, False
 
 # Testing purposes
 if __name__ == "__main__":
@@ -328,3 +328,19 @@ if __name__ == "__main__":
         print(m.coins)
     except SyntaxError as e:
         print(e)
+    
+    # Testing the address functions
+    msg = "test"
+    addr = "1"
+    print(f"msg: {msg}")
+    print(f"addr: {addr}")
+    
+    joined = put_addr(msg, addr)
+    print(f"joined: {joined}")
+    
+    addr, msg, invert = pop_addr(joined)
+    print(f"addr: {addr}")
+    print(f"msg: {msg}")
+    print(f"invert: {invert}")
+    
+

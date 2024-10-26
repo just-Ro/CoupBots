@@ -7,10 +7,11 @@ DEFAULT_ADDR = True  # Use default address for messages
 
 # Client class, new instance created for each connected client
 class Client(threading.Thread):
-    def __init__(self, socket: socket.socket, address, id, name, signal, server: "Server"):
+    def __init__(self, socket: socket.socket, address, id, name, signal, server: "Server", verbose=True):
         threading.Thread.__init__(self)
         self.socket = socket
         self.address = address
+        self.verbose = verbose
         self.id = id
         self.name = name
         self.signal = signal
@@ -28,19 +29,27 @@ class Client(threading.Thread):
                     # Pass the received data to the server for broadcasting
                     self.server.route_message(self, data)
                 else:
-                    print(f"Client {self.id} has disconnected")
+                    self.printv(f"Client {self.id} has disconnected")
                     self.signal = False
+                    if self.server.broadcast_disconnection:
+                        self.printv("Broadcasting disconnection message.")
+                        self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                     self.server.remove_client(self)
                     break
             except (socket.timeout, UnicodeDecodeError):
                 continue
             except OSError:
-                print(f"Client {self.id} has disconnected")
+                self.printv(f"Client {self.id} has disconnected")
                 self.signal = False
                 if self.server.broadcast_disconnection:
+                    self.printv("Broadcasting disconnection message.")
                     self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                 self.server.remove_client(self)
                 break
+    
+    def printv(self, string: str):
+        if self.verbose:
+            print(string)
 
 
 class Server(threading.Thread):
@@ -74,7 +83,7 @@ class Server(threading.Thread):
                     self.signal = False
                     break
                 sock, address = self.socket.accept()
-                new_client = Client(sock, address, self.total_connections, "Name", True, self)
+                new_client = Client(sock, address, self.total_connections, "Name", True, self, self.verbose)
                 self.connections.append(new_client)
                 new_client.start()
                 self.printv(f"New connection at ID {new_client}")

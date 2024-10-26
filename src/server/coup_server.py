@@ -1,5 +1,6 @@
 from .server import Server, Client
 from comms.comms import pop_addr, put_addr
+from comms.comms import DISCONNECTION
 import socket
 import threading
 
@@ -11,7 +12,7 @@ class CoupServer(Server):
     def __init__(self, host="localhost", port=12345, verbose=True):
         super().__init__(host, port, verbose)
         self.broadcast_disconnection = True
-        self.disconnection_message = put_addr("EXIT", str(ROOT_ADDR))
+        self.disconnection_message = put_addr(DISCONNECTION, str(ROOT_ADDR))
 
     def route_message(self, sender: Client, addr_message: bytes):
         """Route a message based on its format."""
@@ -39,7 +40,7 @@ class CoupServer(Server):
         self.printv(f"Broadcasting from ID {sender.id}: {message}")
         
         # Add origin address to the message
-        addr_message = put_addr(sender.id, message)
+        addr_message = put_addr(message, sender.id)
         
         # Broadcast
         for client in self.connections:
@@ -59,7 +60,7 @@ class CoupServer(Server):
             return
         
         # Add origin address to the message
-        addr_message = put_addr(sender.id, message)
+        addr_message = put_addr(message, sender.id)
         
         # Find the client with the specified ID
         for client in self.connections:

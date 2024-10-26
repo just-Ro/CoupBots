@@ -240,7 +240,7 @@ class TestRoot(Player):
         if orig is None:
             self.printv(f"ID?? -> {message}")
             return
-        self.printv(f"ID{int(orig):02d} <- {message}")
+        self.printv(f"ID{int(orig):02d} -> {message}")
         
     def send(self, msg: str, dest: str):
         self.printv(f"ID{int(dest):02d} <- {msg}")
