@@ -37,6 +37,8 @@ class Client(threading.Thread):
             except OSError:
                 print(f"Client {self.id} has disconnected")
                 self.signal = False
+                if self.server.broadcast_disconnection:
+                    self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                 self.server.remove_client(self)
                 break
 
@@ -51,6 +53,8 @@ class Server(threading.Thread):
         self.signal = True
         self.connections: list[Client] = []  # Store connected clients
         self.total_connections = 0  # Count the total connections
+        self.broadcast_disconnection = False
+        self.disconnection_message = ""
 
     def setup_socket(self):
         """Setup the server socket, bind, and listen for connections."""

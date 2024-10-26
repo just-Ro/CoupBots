@@ -10,6 +10,8 @@ ROOT_ADDR = 0
 class CoupServer(Server):
     def __init__(self, host="localhost", port=12345, verbose=True):
         super().__init__(host, port, verbose)
+        self.broadcast_disconnection = True
+        self.disconnection_message = put_addr("EXIT", str(ROOT_ADDR))
 
     def route_message(self, sender: Client, addr_message: bytes):
         """Route a message based on its format."""

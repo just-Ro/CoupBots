@@ -3,6 +3,7 @@ from comms.comms import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCH
 from comms.comms import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
 from comms.comms import put_addr, pop_addr
 from .player import Player
+import random
 
 IDLE = 0
 CHOOSE = 1
@@ -13,6 +14,8 @@ START = 5
 ACTION = 6
 BLOCK = 7
 CHAL = 8
+END = 9
+
 p = Protocol()
 
 class PlayerState:
@@ -26,6 +29,7 @@ class PlayerState:
         self.coins = 0
         self.cards = []
         self.exchange_cards = []
+        self.ready = False
         self.alive = True
         self.turn = False
 
@@ -108,12 +112,12 @@ class PlayerState:
         
         # Wait for all players to be ready
         elif self.state == START:
-            messages.append(p.READY())
+            messages.append(p.OK())
         
         # Choose an action to perform in response to another player's action
         elif self.state == ACTION:
             # Allow the action
-            messages.append(p.ALLOW(self.id))
+            messages.append(p.OK())
             
             # Challenge the action
             if prev_action in (FOREIGN_AID, TAX, ASSASSINATE, STEAL, EXCHANGE):
@@ -130,7 +134,7 @@ class PlayerState:
         
         # Choose to either allow or challenge another player's block
         elif self.state == BLOCK:
-            messages.append(p.ALLOW(self.id))
+            messages.append(p.OK())
             messages.append(p.CHAL(self.id))
         
         # Update possible messages
@@ -169,26 +173,54 @@ class Root(Player):
             self.send(p.ILLEGAL(), orig)
             return
         
-        # Create a state for the player for the first time
-        if m.command == "HELLO":
-            if orig not in self.players.keys():
-                self.players[orig] = (PlayerState(orig, self))
-                self.send(p.PLAYER(str(orig)), orig)
-            return
-        
-        player = self.players[orig]
-        if player is None:
-            return
-        
-        if player.state == IDLE:
-            self.send(p.ILLEGAL(), orig)
-            return
-        
-        if player.state == START:
-            if m.command == "READY":
-                player.generate_answers(IDLE)
-                return
+        # Main state machine
+        if self.state == IDLE:
+            
+            if m.command == "HELLO":
+                # Create a state for the player for the first time
+                if orig not in self.players.keys():
+                    self.players[orig] = (PlayerState(orig, self))
+                    self.send(p.PLAYER(str(orig)), orig)
                 
+            else:
+                player = self.players[orig]
+                if player is None:
+                    return
+                elif player.state == IDLE:
+                    self.send(p.ILLEGAL(), orig)
+                    return
+                
+                if player.state == START:
+                    if m.command == "READY":
+                        player.ready = True
+                        player.generate_answers(IDLE)
+                        return
+                
+                for player in self.players.values():
+                    if not player.ready:
+                        return
+
+        elif self.state == TURN:
+            pass
+        elif self.state == ACTION:
+            pass
+        elif self.state == BLOCK:
+            pass
+        elif self.state == CHAL:
+            pass
+        elif self.state == END:
+            pass
+    
+    def next_state(self):
+        pass
+    
+    def put_card(self, deck: list[str], card: str):
+        deck.append(card)
+
+    def take_card(self, deck: list[str]):
+        if deck:  # Check if deck is not empty
+            return deck.pop(random.randint(0, len(deck) - 1))
+        return None  # Return None if deck is empty
             
     def send(self, msg: str, dest: str):
         self.printv(f"ID{int(dest):02d} <- {msg}")
