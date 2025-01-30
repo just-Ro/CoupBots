@@ -1,8 +1,7 @@
 from .server import Server, Client
-from comms.comms import pop_addr, put_addr
-from comms.comms import DISCONNECTION
-import socket
-import threading
+from comms.network_proto import network_proto, NetworkMessage
+from comms.network_proto import ALL, SINGLE, EXCEPT, DISCONNECT
+from utils.colored_text import red, green, yellow, blue
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -12,27 +11,42 @@ class CoupServer(Server):
     def __init__(self, host="localhost", port=12345, verbose=True):
         super().__init__(host, port, verbose)
         self.broadcast_disconnection = True
-        self.disconnection_message = put_addr(DISCONNECTION, str(ROOT_ADDR))
+        self.disconnection_message = network_proto.SINGLE(ROOT_ADDR, DISCONNECT)
 
-    def route_message(self, sender: Client, addr_message: bytes):
+    def route_message(self, sender: Client, net_msg: bytes):
         """Route a message based on its format."""
-        addr_message_str = addr_message.decode("utf-8")
+        net_msg_str = net_msg.decode("utf-8")
 
+        self.printv(blue(f"Received message from ID {sender.id}: {net_msg_str}"))
+        
         # If the message is not addressed, address it to root
-        addr, message_str, invert_addr = pop_addr(addr_message_str)
-        if addr is None:
-            dest = ROOT_ADDR
-        else:
-            dest = int(addr)
+        try:
+            net = NetworkMessage(net_msg_str)
+        except SyntaxError:
+            self.printv(yellow("Invalid message format."))
+            return
+        
+        if net.msg is None:
+            self.printv(yellow("Empty message."))
+            return
 
-        if invert_addr:
-            # Broadcast to everyone except sender and the client with the specified ID
-            self.printv(f"Broadcasting except ID {dest}.")
-            self.broadcast_except(sender, message_str, dest)
-        else:
+        if net.msg_type == SINGLE:
             # Direct message to a specific client
-            self.printv(f"Sending message to ID {dest}.")
-            self.send_to_client(sender, message_str, dest)
+            if net.addr is None:
+                self.printv(yellow("No address specified for single message."))
+            else:
+                self.send_to_client(sender, net.msg, int(net.addr))
+                
+        elif net.msg_type == EXCEPT:
+            # Broadcast to everyone except sender and the client with the specified ID
+            if net.addr is None:
+                self.printv(yellow("No address specified for except message."))
+            else:
+                self.broadcast_except(sender, net.msg, int(net.addr))
+                
+        elif net.msg_type == ALL:
+            # Broadcast to everyone except sender
+            self.broadcast_except(sender, net.msg, int(sender.id))
             
         
     def broadcast_except(self, sender: Client, message: str, exclude_client_id: int):
@@ -40,13 +54,17 @@ class CoupServer(Server):
         self.printv(f"Broadcasting from ID {sender.id}: {message}")
         
         # Add origin address to the message
-        addr_message = put_addr(message, sender.id)
+        try:
+            net_msg = network_proto.SINGLE(sender.id, message)
+        except SyntaxError:
+            self.printv(yellow("Invalid message format."))
+            return
         
         # Broadcast
         for client in self.connections:
             if client.id != sender.id and client.id != exclude_client_id:
                 try:
-                    client.socket.sendall(addr_message.encode("utf-8"))
+                    client.socket.sendall(net_msg.encode("utf-8"))
                 except OSError:
                     self.remove_client(client)
 
@@ -56,23 +74,27 @@ class CoupServer(Server):
         
         # Check if client is addressing itself
         if client_id == sender.id:
-            self.printv("Client addressed itself.")
+            self.printv(yellow("Client addressed itself."))
             return
         
         # Add origin address to the message
-        addr_message = put_addr(message, sender.id)
+        try:
+            net_msg = network_proto.SINGLE(sender.id, message)
+        except SyntaxError:
+            self.printv(yellow("Invalid message format."))
+            return
         
         # Find the client with the specified ID
         for client in self.connections:
             if client.id != sender.id and client.id == client_id:
                 try:
-                    client.socket.sendall(addr_message.encode("utf-8"))
+                    client.socket.sendall(net_msg.encode("utf-8"))
                 except OSError:
                     self.remove_client(client)
                 return
         
         # Client not found
-        self.printv(f"Client with ID {client_id} not found.")
+        self.printv(yellow(f"Client with ID {client_id} not found."))
 
 
 def main():

@@ -1,7 +1,11 @@
 import socket
 import threading
+from utils.colored_text import red, green, yellow, blue
 
 
+CLIENT_TIMEOUT = 1.0  # Timeout for client socket
+SERVER_TIMEOUT = 1.0  # Timeout for server socket
+MAX_CONNECTIONS = 5  # Maximum number of connections
 DEFAULT_ADDR = True  # Use default address for messages
 
 
@@ -16,7 +20,7 @@ class Client(threading.Thread):
         self.name = name
         self.signal = signal
         self.server = server  # Reference to the server to forward received messages
-        self.socket.settimeout(1.0)  # Set a short timeout (1 second) for recv()
+        self.socket.settimeout(CLIENT_TIMEOUT)  # Set a short timeout (1 second) for recv()
 
     def __str__(self):
         return str(self.id) + " " + str(self.address)
@@ -49,7 +53,7 @@ class Client(threading.Thread):
     
     def printv(self, string: str):
         if self.verbose:
-            print(string)
+            print(f"[{str(self.__class__.__name__)}] {string}")
 
 
 class Server(threading.Thread):
@@ -69,9 +73,9 @@ class Server(threading.Thread):
         """Setup the server socket, bind, and listen for connections."""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind((self.host, self.port))
-        self.socket.listen(5)
-        self.socket.settimeout(1)  # Add a timeout so the accept loop can regularly check for shutdown
-        self.printv(f"Server listening on {self.host}:{self.port}")
+        self.socket.listen(MAX_CONNECTIONS)
+        self.socket.settimeout(SERVER_TIMEOUT)  # Add a timeout so the accept loop can regularly check for shutdown
+        self.printv(green(f"Server listening on {self.host}:{self.port}"))
 
     def run(self):
         self.setup_socket()
@@ -86,7 +90,7 @@ class Server(threading.Thread):
                 new_client = Client(sock, address, self.total_connections, "Name", True, self, self.verbose)
                 self.connections.append(new_client)
                 new_client.start()
-                self.printv(f"New connection at ID {new_client}")
+                self.printv(green(f"New connection at ID {new_client}"))
                 self.total_connections += 1
             except OSError:
                 continue
@@ -127,7 +131,7 @@ class Server(threading.Thread):
 
     def printv(self, string: str):
         if self.verbose:
-            print(string)
+            print(f"[{str(self.__class__.__name__)}] {string}")
 
 
 def main():

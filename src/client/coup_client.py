@@ -1,5 +1,8 @@
 from .client import Client
 from .player import Player, Human
+from comms.network_proto import SINGLE, EXCEPT, ALL
+from comms.network_proto import network_proto, NetworkMessage
+from utils.colored_text import red, green, yellow, blue
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -14,13 +17,14 @@ class CoupClient(Client):
         self.verbose = player.verbose
         self.ui = player.ui
 
-        
-
     def addr_root(self, message: str):
-        return f"{ROOT_ADDR}@{message}"
+        return network_proto.SINGLE(ROOT_ADDR, message)
 
     def addr_strip(self, message: str):
-        return message.split("@")[1]
+        net = NetworkMessage(message)
+        if net.msg is not None:
+            return str(net.msg)
+        raise SyntaxError("Invalid message format.")
 
     def sender(self):
         try:
@@ -35,11 +39,11 @@ class CoupClient(Client):
                     self.send(message)
                     
         except KeyboardInterrupt:
-            self.printv("Keyboard interrupt detected, closing connection.")
+            self.printv(blue("Keyboard interrupt detected, closing connection."))
         except NotImplementedError:
-            self.printv("Method not implemented yet!")
-        except:
-            self.printv("Error in sender")
+            self.printv(yellow("Method not implemented yet!"))
+        except Exception as e:
+            self.printv(red(f"Error in sender: {e}"))
         self.signal = False
 
     def receiver(self, message: str):
@@ -48,12 +52,15 @@ class CoupClient(Client):
             if not self.player.is_root:
                 message = self.addr_strip(message)
             self.player.receive(message)
+        
+        except SyntaxError:
+            self.printv(yellow("Invalid message format."))
             
         except NotImplementedError:
-            self.printv("Method not implemented yet!")
+            self.printv(yellow("Method not implemented yet!"))
             self.signal = False
         except Exception as e:
-            self.printv(f"Error in receiver: {e}")
+            self.printv(red(f"Error in receiver: {e}"))
             self.signal = False
 
 

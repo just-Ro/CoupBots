@@ -1,5 +1,6 @@
 import threading
 import queue
+from utils.colored_text import red, green, blue, yellow
 
 
 class Terminal(threading.Thread):
@@ -19,7 +20,7 @@ class Terminal(threading.Thread):
         except (KeyboardInterrupt, EOFError):
             self.signal = False
         except:
-            print(f"Error in Terminal")
+            print(red(f"Error in Terminal"))
             self.signal = False
         
         
