@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+from utils.colored_text import red, green, yellow, blue
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -26,7 +27,7 @@ class Client:
                 message = input()
                 self.send(message)
             except KeyboardInterrupt:
-                self.printv("Keyboard interrupt detected, closing connection.")
+                self.printv(blue("Keyboard interrupt detected, closing connection."))
                 self.signal = False
                 break
 
@@ -38,7 +39,7 @@ class Client:
             message {str} -- message that will be printed
         """
 
-        self.printui(message)
+        self.printui(blue(message))
 
     # -- Wrappers --
 
@@ -73,10 +74,10 @@ class Client:
             if self.socket is not None:
                 self.socket.sendall(message.encode("utf-8"))
             else:
-                self.printv("You are not connected to the server.")
+                self.printv(yellow("You are not connected to the server."))
                 self.signal = False
         except Exception as e:
-            self.printv(f"Error sending message: {e}")
+            self.printv(red(f"Error sending message: {e}"))
             self.signal = False
 
     def __connect__(self):
@@ -87,10 +88,10 @@ class Client:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((self.host, self.port))
-            self.printv(f"Connected to server at {self.host}:{self.port}")
+            self.printv(green(f"Connected to server at {self.host}:{self.port}"))
             self.socket.settimeout(1)
         except Exception as e:
-            self.printv(f"Could not make a connection to the server: {e}")
+            self.printv(red(f"Could not make a connection to the server: {e}"))
             sys.exit(0)
 
     def __handle_receive__(self):
@@ -98,20 +99,24 @@ class Client:
         Continuously receives messages from the server and calls receiver with any new message
         """
 
+        buffer = ""
         while self.signal:
             try:
                 if self.socket is not None:
                     data = self.socket.recv(32)
                     if data:
-                        self.receiver(str(data.decode("utf-8")))
+                        buffer += data.decode("utf-8")
+                        while "\n" in buffer:
+                            message, buffer = buffer.split("\n", 1)
+                            self.receiver(message)
                         continue
-                self.printv("Server has closed the connection.")
+                self.printv(red("Server has closed the connection."))
                 self.signal = False
                 break
             except socket.timeout:
                 continue
             except:
-                self.printv("You have been disconnected from the server.")
+                self.printv(red("You have been disconnected from the server."))
                 self.signal = False
                 break
 
@@ -134,7 +139,7 @@ class Client:
 
     def printv(self, string: str):
         if self.verbose:
-            print(string)
+            print(f"[{str(self.__class__.__name__)}] {string}")
 
     def printui(self, string: str):
         if self.ui:
