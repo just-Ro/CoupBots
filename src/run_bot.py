@@ -1,5 +1,6 @@
 from client.coup_client import CoupClient
 from client.bots import CoupBot
+from client.root import TestBot
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -17,7 +18,8 @@ def main():
         port = int(port)  # Ensure port is an integer
 
     # Create client
-    player = CoupBot()
+    # player = CoupBot()
+    player = TestBot()
     client = CoupClient(host, port, player)
     client.run()
 

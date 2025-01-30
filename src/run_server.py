@@ -22,8 +22,8 @@ def main():
     server = CoupServer(host, port, SERVER_VERBOSE)
 
     # Create client
-    player = TestRoot() # Use for manual testing
-    # player = Root() # Still unfinished
+    # player = TestRoot() # Use for manual testing
+    player = Root() # Still unfinished
     client = CoupClient(host, port, player)
 
     try:

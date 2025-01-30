@@ -19,7 +19,7 @@ Each game of Coup is simulated and played using a **Server**, a **Root** and 2-5
 
 
 <div style="text-align: center;">
-<img src="network_diagram.png" alt="Alt text" width="300"/>
+<img src="assets/network_diagram.png" alt="Alt text" width="300"/>
 </div>
 
 ### Server
@@ -64,9 +64,7 @@ Below is the full list of the accepted Protocol messages.
 | `OK`                       | Allow Action/Block or acknowledge information |
 | `BLOCK\|ID1\|card`         | Block Action: `ID1` = Player ID blocking an action, `card` = Character used to block |
 | `CHAL\|ID1`                | Challenge Action: `ID1` = Player ID challenging an action or block |
-| `SHOW`                     | Request Card Reveal from a player |
 | `SHOW\|ID1\|card`          | Player Card Reveal: `ID1` = Player ID, `card` = Character card to reveal |
-| `LOSE`                     | Request for a Player to Lose Influence |
 | `LOSE\|ID1\|card`          | Lose Influence: `ID1` = Player ID, `card` = Character card lost |
 | `COINS\|ID1\|coins`        | Update Coins: `ID1` = Player ID, `coins` = Current coin count |
 | `DECK\|card1\|card2`       | Inform Player of Current Deck: `card1` = First card, `card2` = Second card (available depending on the game state) |
@@ -75,6 +73,7 @@ Below is the full list of the accepted Protocol messages.
 | `HELLO`                    | Register on the Root to obtain ID |
 | `PLAYER\|ID1`              | Broadcast ID of a registered player: `ID1` = Registered player ID |
 | `START`                    | Sync all players to start game. |
+| `READY`                    | Player tells it's ready |
 | `TURN\|ID1`                | Ask a player for an action: `ID1` = Player ID |
 | `EXIT`                     | Remove player from game |
 | `ILLEGAL`                  | Player made an illegal move |
@@ -84,25 +83,23 @@ Below is the full list of the accepted Protocol messages.
 These are all possible messages each **Client** can receive and all possible replies:
 | Receive | Reply |
 |---------|-------|
-| `ACT\|ID1\|ACTION\|ID2` | `OK`, `CHAL\|ID1`, `BLOCK\|ID1\|card` |
+| `ACT\|ID1\|ACTION\|ID2` | `OK`, `CHAL\|ID1`, `BLOCK\|ID1\|card`, `LOSE\|ID1\|card` |
 | `BLOCK\|ID1\|card` | `OK`, `CHAL\|ID1` |
-| `CHAL\|ID1` | None |
-| `SHOW` | `SHOW\|ID1\|card` |
-| `SHOW\|ID1\|card` | `OK` |
-| `LOSE` | `LOSE\|ID1\|card` |
+| `CHAL\|ID1` | `OK`, `SHOW\|ID1\|card`, `LOSE\|ID1\|card` |
+| `SHOW\|ID1\|card` | `OK`, `LOSE\|ID1\|card` |
 | `LOSE\|ID1\|card` | `OK` |
 | `COINS\|ID1\|coins` | `OK` |
 | `DECK\|card1\|card2` | `OK` |
 | `CHOOSE\|card1\|card2` | `KEEP\|card1\|card2` |
 | `PLAYER\|ID1` | `OK` |
-| `START` | `OK` |
+| `START` | `READY` |
 | `TURN\|ID1` | `OK`, `ACT\|ID1\|ACTION\|ID2` |
 | `EXIT` | None |
 | `ILLEGAL` | ** |
 
 \* The **Client** should reply `OK` if ID1 is not its own ID.
 
-\** If a player receives `ILLEGAL`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. If the player sends 2 illegal messages in a row, the **Root** replies with `END|ID` and the player is kicked from the game.
+\** If a player receives `ILLEGAL`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. If the player sends 2 illegal messages in a row, the **Root** replies with `EXIT` and the player is kicked from the game.
 
 
 ## Game initialization
@@ -115,20 +112,22 @@ To startup the game, there is a sequence of commands that must be used to initia
 3.  Player <--- Root: `PLAYER|ID1`
 4.  Player ---> Root: `OK`
 5.  Player <--- Root: `START` (this command is sent manually)
-6.  Player ---> Root: `OK`
+6.  Player ---> Root: `READY`
 7.  Player <--- Root: `DECK|card1|card2`
 8.  Player ---> Root: `OK`
 9.  Player <--- Root: `COINS|ID1|coins`
 10. Player ---> Root: `OK`
 11. Player <--- Root: `PLAYER|ID2`
 12. Player ---> Root: `OK`
-13. Player <--- Root: `PLAYER|ID3`
+13. Player <--- Root: `PLAYER|ID3` *
 14. Player ---> Root: `OK`
-15. Player <--- Root: `PLAYER|ID4`
+15. Player <--- Root: `PLAYER|ID4` *
 16. Player ---> Root: `OK`
-17. Player <--- Root: `PLAYER|ID5`
+17. Player <--- Root: `PLAYER|ID5` *
 18. Player ---> Root: `OK`
 19. Player <--- Root: `TURN|ID`
+
+\* The game can be played with 2-5 players, so these messages are not always sent.
 
 ## Challenge resolution
 ### Scenario 1: P1 challenges P2's action and P2 loses
@@ -159,6 +158,8 @@ To startup the game, there is a sequence of commands that must be used to initia
 2. Player ---> Root: `SHOW|P2|card`
 3. Player <--- Root: `LOSE|P1|card`
 4. Player ---> Root: `OK`
+5. Player <--- Root: `DECK|card1|card2`
+6. Player ---> Root: `OK`
 
 #### other players
 1. Player <--- Root: `CHAL|P1`

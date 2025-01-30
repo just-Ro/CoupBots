@@ -1,9 +1,10 @@
-from comms.comms import Protocol, Parse
-from comms.comms import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE, ACTIONS, TARGET_ACTIONS  # Actions
-from comms.comms import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
+from comms.game_proto import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE, ACTIONS, TARGET_ACTIONS  # Actions
+from comms.game_proto import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
 from terminal.terminal import Terminal
+from utils.colored_text import red, green, yellow, blue
 import queue
 
+CHECKOUT_TIMEOUT = 0.5
 
 class Player:
     """
@@ -31,10 +32,10 @@ class Player:
         try:
             # Check if the terminal thread finished
             if not self.term.signal:
-                print("Terminal closed.")
+                self.printv("Terminal closed.")
                 raise KeyboardInterrupt
             
-            return self.checkout.get(timeout=0.5)
+            return self.checkout.get(timeout=CHECKOUT_TIMEOUT)
         except queue.Empty:
             print(end="")   # weird way to update the console buffer
             return None
@@ -52,6 +53,10 @@ class Player:
 
     def printv(self, string: str):
         if self.verbose:
+            print(f"[{str(self.__class__.__name__)}] {string}")
+
+    def printui(self, string: str):
+        if self.ui:
             print(string)
 
 class Human(Player):
@@ -66,4 +71,4 @@ class Human(Player):
         self.checkout.put("HELLO")
         
     def receive(self, message: str):
-        self.printv(message)
+        self.printui(message)
