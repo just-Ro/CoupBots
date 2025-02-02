@@ -1,6 +1,5 @@
 from client.coup_client import CoupClient
-from client.bots import CoupBot
-from client.root import TestBot
+from client.bots import CoupBot, TestBot
 
 
 DEFAULT_ADDR = True  # Use default address for messages

@@ -1,8 +1,5 @@
 
 
-from typing import Any
-
-
 class MsgArg:
     def __init__(self, name, check, required=True):
         self.name = name
@@ -98,7 +95,4 @@ class BaseMsg:
 
     def __str__(self):
         return self.proto.serialize(self.msg_type, self.args)
-
-    
-        
-        
+       

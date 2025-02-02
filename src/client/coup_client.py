@@ -1,7 +1,7 @@
 from .client import Client
 from .player import Player, Human
-from comms.network_proto import SINGLE, EXCEPT, ALL
-from comms.network_proto import network_proto, NetworkMessage
+from proto.network_proto import SINGLE, EXCEPT, ALL
+from proto.network_proto import network_proto, NetworkMessage
 from utils.colored_text import red, green, yellow, blue
 
 

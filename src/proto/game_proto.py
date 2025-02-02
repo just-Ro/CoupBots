@@ -1,23 +1,6 @@
 from .protobase import MsgType, MsgArg, Proto, BaseMsg
+from client.game.core import ACTIONS, CHARACTERS
 
-# Actions
-INCOME = "I"
-FOREIGN_AID = "F"
-COUP = "C"
-TAX = "T"
-ASSASSINATE = "A"
-STEAL = "S"
-EXCHANGE = "X"
-ACTIONS = (INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE)
-TARGET_ACTIONS = (COUP, ASSASSINATE, STEAL)
-
-# Characters
-ASSASSIN = "A"
-AMBASSADOR = "B"
-CAPTAIN = "C"
-DUKE = "D"
-CONTESSA = "E"
-CHARACTERS = (DUKE, ASSASSIN, CONTESSA, CAPTAIN, AMBASSADOR)
 
 # Message types
 ACT = "ACT"

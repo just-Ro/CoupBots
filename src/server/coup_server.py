@@ -1,6 +1,6 @@
 from .server import Server, Client
-from comms.network_proto import network_proto, NetworkMessage
-from comms.network_proto import ALL, SINGLE, EXCEPT, DISCONNECT
+from proto.network_proto import network_proto, NetworkMessage
+from proto.network_proto import ALL, SINGLE, EXCEPT, DISCONNECT
 from utils.colored_text import red, green, yellow, blue
 
 

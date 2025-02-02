@@ -1,5 +1,5 @@
 import unittest
-from comms.game_proto import game_proto, GameMessage
+from proto.game_proto import game_proto, GameMessage
 
 class TestGameProto(unittest.TestCase):
 
