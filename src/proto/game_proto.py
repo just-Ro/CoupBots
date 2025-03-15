@@ -140,6 +140,9 @@ class GameProto(Proto):
     def TURN(self, ID1):
         return self.serialize(TURN, {"ID1": ID1})
     
+    def EXIT(self):
+        return self.serialize(EXIT, {})
+    
     def ILLEGAL(self):
         return self.serialize(ILLEGAL, {})
 
@@ -148,12 +151,12 @@ game_proto = GameProto()
 class GameMessage(BaseMsg):
     def __init__(self, msg: str):
         super().__init__(game_proto, msg)
-        self.ID1 = self.args.get("ID1")
-        self.ID2 = self.args.get("ID2")
-        self.action = self.args.get("action")
-        self.card1 = self.args.get("card1")
-        self.card2 = self.args.get("card2")
-        self.coins = self.args.get("coins")
+        self.ID1 = self.args.get("ID1", None)
+        self.ID2 = self.args.get("ID2", None)
+        self.action = self.args.get("action", None)
+        self.card1 = self.args.get("card1", None)
+        self.card2 = self.args.get("card2", None)
+        self.coins = self.args.get("coins", None)
         self.command = self.msg_type
 
     

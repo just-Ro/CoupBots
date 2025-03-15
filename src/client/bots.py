@@ -62,7 +62,13 @@ class TestBot(Player, PlayerSim):
             self.printv(green(str(message)))
             m = GameMessage(message)
             self.pre_update_state(m)
-            if self.state not in [PlayerState.IDLE, State.S_END]:
+            if self.state == PlayerState.IDLE:
+                pass
+            elif self.state == PlayerState.END:
+                self.printv(blue("Game Over, terminating bot."))
+                # TODO: Add a way to terminate the bot
+                exit(0) # This dont werk
+            else:
                 self.printv(f"State: {self.state}\n Possible messages: {self.possible_messages}")
                 self.choose_message()
                 self.post_update_state(self.msg)
@@ -196,7 +202,10 @@ class TestBot(Player, PlayerSim):
             self.set_state(PlayerState.R_SHOW)
                 
         elif message.command == LOSE:
-            self.set_state(PlayerState.R_LOSE)
+            if message.ID1 == None or message.ID1 == self.id:
+                self.set_state(PlayerState.R_LOSE_ME)
+            else:
+                self.set_state(PlayerState.R_LOSE)
             
         elif message.command == COINS:
             self.set_state(PlayerState.R_COINS)

@@ -44,8 +44,8 @@ network_proto = NetworkProto()
 class NetworkMessage(BaseMsg):
     def __init__(self, msg: str):
         super().__init__(network_proto, msg)
-        self.addr = self.args.get("addr")
-        self.msg = self.args.get("msg")
+        self.addr = self.args.get("addr", None)
+        self.msg = self.args.get("msg", None)
 
     
         

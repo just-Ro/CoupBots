@@ -1,21 +1,25 @@
 from enum import Enum, auto
 from proto.game_proto import game_proto, GameMessage
 from .core import *
+from itertools import permutations
 
 
 class State(Enum):
-    S_IDLE = auto()
-    S_START = auto()
-    S_TURN = auto()
-    S_ACTION = auto()
-    S_DO_ACTION = auto()
-    S_BLOCK = auto()
-    S_CHAL = auto()
-    S_END = auto()
+    IDLE = auto()
+    START = auto()
+    TURN = auto()
+    ACTION = auto()
+    DO_ACTION = auto()
+    BLOCK = auto()
+    CHAL = auto()
+    END = auto()
 
 class SubState(Enum):
-    SS_0 = auto()  # default substate 
-    SS_START_COINS = auto()
+    DEFAULT = auto()  # default substate 
+    START_COINS = auto()
+    DO_ACTION_STEAL_TARGET_COINS = auto()
+    DO_ACTION_ASSASS_TURN_COINS = auto()
+    DO_ACTION_COUP_TURN_COINS = auto()
 
 class PlayerState(Enum):
     IDLE = auto()
@@ -48,6 +52,7 @@ class PlayerState(Enum):
     R_CHAL_MY_D = auto()
     R_CHAL_MY_E = auto()
     R_LOSE = auto()
+    R_LOSE_ME = auto()
     R_SHOW = auto()
     R_COINS = auto()
     R_DECK = auto()
@@ -93,7 +98,7 @@ class PlayerSim:
         messages = []
 
         # If the player is dead or can't reply, they can't send any messages
-        if not self.alive or self.state == State.S_IDLE:
+        if not self.alive or self.state == State.IDLE:
             return messages
             
         # Wait for all players to be ready
@@ -101,7 +106,7 @@ class PlayerSim:
             messages.append(game_proto.READY())
         
         elif self.state == PlayerState.R_MY_TURN:
-            if self.coins < 10:
+            if self.coins < COUP_COINS_THRESHOLD:
                 
                 messages.append(game_proto.ACT(self.id, INCOME))
                 messages.append(game_proto.ACT(self.id, FOREIGN_AID))
@@ -112,12 +117,12 @@ class PlayerSim:
                     if target != self and target.alive:
                         messages.append(game_proto.ACT(self.id, STEAL, target.id))
                 
-                if self.coins >= 3:
+                if self.coins >= ASSASSINATION_COST:
                     for target in self.players.values():
                         if target != self and target.alive:
                             messages.append(game_proto.ACT(self.id, ASSASSINATE, target.id))
             
-            if self.coins >= 7:
+            if self.coins >= COUP_COST:
                 for target in self.players.values():
                     if target != self and target.alive:
                         messages.append(game_proto.ACT(self.id, COUP, target.id))
@@ -235,6 +240,10 @@ class PlayerSim:
                 
         elif self.state == PlayerState.R_LOSE:
             messages.append(game_proto.OK())
+            
+        elif self.state == PlayerState.R_LOSE_ME:
+            for card in self.deck:
+                messages.append(game_proto.LOSE(self.id, card))
                 
         elif self.state == PlayerState.R_SHOW:
             if self.tag == Tag.T_CHALLENGING:
@@ -259,10 +268,8 @@ class PlayerSim:
                     
             # Player has 2 cards left alive
             elif len(options) == 4:
-                for card1 in options:
-                    for card2 in options:
-                        if card1 != card2:
-                            messages.append(game_proto.KEEP(card1, card2))
+                for card1, card2 in permutations(options, 2):
+                    messages.append(game_proto.KEEP(card1, card2))
         
         elif self.state == PlayerState.R_PLAYER:
             messages.append(game_proto.OK())

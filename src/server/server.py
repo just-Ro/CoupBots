@@ -87,6 +87,7 @@ class Server(threading.Thread):
                     self.signal = False
                     break
                 sock, address = self.socket.accept()
+                # TODO: assign the first available client id 
                 new_client = Client(sock, address, self.total_connections, "Name", True, self, self.verbose)
                 self.connections.append(new_client)
                 new_client.start()
