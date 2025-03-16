@@ -63,7 +63,7 @@ class GameProto(Proto):
                 MsgArg("coins", _check_coins)),
 
             MsgType(DECK, 
-                MsgArg("card1", _check_card), 
+                MsgArg("card1", _check_card, False), 
                 MsgArg("card2", _check_card, False)),
 
             MsgType(CHOOSE, 
@@ -116,7 +116,7 @@ class GameProto(Proto):
     def COINS(self, ID1, coins):
         return self.serialize(COINS, {"ID1": ID1, "coins": coins})
     
-    def DECK(self, card1, card2=None):
+    def DECK(self, card1=None, card2=None):
         return self.serialize(DECK, {"card1": card1, "card2": card2})
     
     def CHOOSE(self, card1, card2=None):
