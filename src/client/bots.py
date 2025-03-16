@@ -156,25 +156,8 @@ class TestBot(Player, PlayerSim):
         elif message.command == CHAL:
             self.tag = Tag.T_NONE
             self.printv(f"Deck: {self.deck}")
-            if self.rcv_msg.command == ACT:
-                if self.rcv_msg.action == ASSASSINATE:
-                    self.set_state(PlayerState.R_CHAL_A)
-                elif self.rcv_msg.action == EXCHANGE:
-                    self.set_state(PlayerState.R_CHAL_B)
-                elif self.rcv_msg.action == STEAL:
-                    self.set_state(PlayerState.R_CHAL_C)
-                elif self.rcv_msg.action == TAX:
-                    self.set_state(PlayerState.R_CHAL_D)
-                else:
-                    self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging non-challengeable actions: {str(self.rcv_msg)}"))
-            elif self.rcv_msg.command == BLOCK:
-                if self.rcv_msg.card1 == CONTESSA:
-                    self.set_state(PlayerState.R_CHAL_E)
-                else:
-                    self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
-            elif self.msg.command == ACT:
+            # TODO: Implement challenge logic because this is wrong
+            if self.msg.command == ACT:
                 if self.msg.action == ASSASSINATE:
                     self.tag = Tag.T_CHALLENGED
                     self.set_state(PlayerState.R_CHAL_MY_A)
@@ -189,11 +172,29 @@ class TestBot(Player, PlayerSim):
                     self.set_state(PlayerState.R_CHAL_MY_D)
                 else:
                     self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging non-challengeable actions: {str(self.msg)}"))
+                    self.printv(red(f"Challenging non-challengeable actions 3: {str(self.msg)}"))
             elif self.msg.command == BLOCK:
                 if self.msg.card1 == CONTESSA:
                     self.tag = Tag.T_CHALLENGED
                     self.set_state(PlayerState.R_CHAL_MY_E)
+            elif self.rcv_msg.command == ACT:
+                if self.rcv_msg.action == ASSASSINATE:
+                    self.set_state(PlayerState.R_CHAL_A)
+                elif self.rcv_msg.action == EXCHANGE:
+                    self.set_state(PlayerState.R_CHAL_B)
+                elif self.rcv_msg.action == STEAL:
+                    self.set_state(PlayerState.R_CHAL_C)
+                elif self.rcv_msg.action == TAX:
+                    self.set_state(PlayerState.R_CHAL_D)
+                else:
+                    self.set_state(PlayerState.IDLE)
+                    self.printv(red(f"Challenging non-challengeable actions 1: {str(self.rcv_msg)}"))
+            elif self.rcv_msg.command == BLOCK:
+                if self.rcv_msg.card1 == CONTESSA:
+                    self.set_state(PlayerState.R_CHAL_E)
+                else:
+                    self.set_state(PlayerState.IDLE)
+                    self.printv(red(f"Challenging a non-challengeable action 2: {str(self.rcv_msg)}"))
             else:
                 self.set_state(PlayerState.IDLE)
                 self.printv(red(f"Challenging non-challengeable actions: Mine: {str(self.msg)}, Previous: {str(self.rcv_msg)}"))
@@ -222,6 +223,8 @@ class TestBot(Player, PlayerSim):
                     self.deck = [message.card1, message.card2]
                 else:
                     self.deck = [message.card1]
+            else:
+                self.deck = []
             
         elif message.command == CHOOSE:
             self.set_state(PlayerState.R_CHOOSE)
