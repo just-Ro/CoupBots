@@ -156,49 +156,81 @@ class TestBot(Player, PlayerSim):
         elif message.command == CHAL:
             self.tag = Tag.T_NONE
             self.printv(f"Deck: {self.deck}")
-            # TODO: Implement challenge logic because this is wrong
-            if self.msg.command == ACT:
-                if self.msg.action == ASSASSINATE:
-                    self.tag = Tag.T_CHALLENGED
-                    self.set_state(PlayerState.R_CHAL_MY_A)
-                elif self.msg.action == EXCHANGE:
-                    self.tag = Tag.T_CHALLENGED
-                    self.set_state(PlayerState.R_CHAL_MY_B)
-                elif self.msg.action == STEAL:
-                    self.tag = Tag.T_CHALLENGED
-                    self.set_state(PlayerState.R_CHAL_MY_C)
-                elif self.msg.action == TAX:
-                    self.tag = Tag.T_CHALLENGED
-                    self.set_state(PlayerState.R_CHAL_MY_D)
+
+            if self.turn:
+                if self.rcv_msg.command == BLOCK:
+                    if self.rcv_msg.card1 == AMBASSADOR:
+                        self.set_state(PlayerState.R_CHAL_B)
+                    elif self.rcv_msg.card1 == CAPTAIN:
+                        self.set_state(PlayerState.R_CHAL_C)
+                    elif self.rcv_msg.card1 == DUKE:
+                        self.set_state(PlayerState.R_CHAL_D)
+                    else:
+                        self.set_state(PlayerState.IDLE)
+                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+                elif self.msg.command == ACT:
+                    if self.msg.action == ASSASSINATE:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_A)
+                    elif self.msg.action == EXCHANGE:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_B)
+                    elif self.msg.action == STEAL:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_C)
+                    elif self.msg.action == TAX:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_D)
+                    else:
+                        self.set_state(PlayerState.IDLE)
+                        self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
                 else:
                     self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging non-challengeable actions 3: {str(self.msg)}"))
-            elif self.msg.command == BLOCK:
-                if self.msg.card1 == CONTESSA:
-                    self.tag = Tag.T_CHALLENGED
-                    self.set_state(PlayerState.R_CHAL_MY_E)
-            elif self.rcv_msg.command == ACT:
-                if self.rcv_msg.action == ASSASSINATE:
-                    self.set_state(PlayerState.R_CHAL_A)
-                elif self.rcv_msg.action == EXCHANGE:
-                    self.set_state(PlayerState.R_CHAL_B)
-                elif self.rcv_msg.action == STEAL:
-                    self.set_state(PlayerState.R_CHAL_C)
-                elif self.rcv_msg.action == TAX:
-                    self.set_state(PlayerState.R_CHAL_D)
-                else:
-                    self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging non-challengeable actions 1: {str(self.rcv_msg)}"))
-            elif self.rcv_msg.command == BLOCK:
-                if self.rcv_msg.card1 == CONTESSA:
-                    self.set_state(PlayerState.R_CHAL_E)
-                else:
-                    self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging a non-challengeable action 2: {str(self.rcv_msg)}"))
+                    self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
             else:
-                self.set_state(PlayerState.IDLE)
-                self.printv(red(f"Challenging non-challengeable actions: Mine: {str(self.msg)}, Previous: {str(self.rcv_msg)}"))
+                if self.msg.command == BLOCK:
+                    if self.msg.card1 == AMBASSADOR:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_B)
+                    elif self.msg.card1 == CAPTAIN:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_C)
+                    elif self.msg.card1 == DUKE:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_D)
+                    elif self.msg.card1 == CONTESSA:
+                        self.tag = Tag.T_CHALLENGED
+                        self.set_state(PlayerState.R_CHAL_MY_E)
+                    else:
+                        self.set_state(PlayerState.IDLE)
+                        self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
                 
+                elif self.rcv_msg.command == BLOCK:
+                    if self.rcv_msg.card1 == AMBASSADOR:
+                        self.set_state(PlayerState.R_CHAL_B)
+                    elif self.rcv_msg.card1 == CAPTAIN:
+                        self.set_state(PlayerState.R_CHAL_C)
+                    elif self.rcv_msg.card1 == DUKE:
+                        self.set_state(PlayerState.R_CHAL_D)
+                    elif self.rcv_msg.card1 == CONTESSA:
+                        self.set_state(PlayerState.R_CHAL_E)
+                    else:
+                        self.set_state(PlayerState.IDLE)
+                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+                
+                elif self.rcv_msg.command == ACT:
+                    if self.rcv_msg.action == ASSASSINATE:
+                        self.set_state(PlayerState.R_CHAL_A)
+                    elif self.rcv_msg.action == EXCHANGE:
+                        self.set_state(PlayerState.R_CHAL_B)
+                    elif self.rcv_msg.action == STEAL:
+                        self.set_state(PlayerState.R_CHAL_C)
+                    elif self.rcv_msg.action == TAX:
+                        self.set_state(PlayerState.R_CHAL_D)
+                    else:
+                        self.set_state(PlayerState.IDLE)
+                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+            
         elif message.command == SHOW:
             self.set_state(PlayerState.R_SHOW)
                 
@@ -276,7 +308,7 @@ class TestBot(Player, PlayerSim):
             raise IndexError("No possible messages.")
         self.msg = GameMessage(random.choice(self.possible_messages)) # choose random
         # self.msg = GameMessage(self.possible_messages[-1]) # choose last
-        # return
+        return
         
         # test with priority choices
         msgs: list[GameMessage] = []

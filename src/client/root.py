@@ -84,7 +84,7 @@ class Root(Player):
         self.debug_player_states()
         self.debug_player_possible_messages()
 
-    ### Player States
+### Player States
     
     def update_player_state(self, orig: str, m: GameMessage):
         player = self.players[orig]
@@ -169,7 +169,7 @@ class Root(Player):
             if player.alive:
                 self.printv(f"ID{player.id}: {player.possible_messages}")
 
-    ### State Machine Conditions
+### State Machine Conditions
     
     def all_players_ready(self):
         return all([player.alive and player.ready for player in self.players.values()])
@@ -222,7 +222,7 @@ class Root(Player):
     def game_over(self):
         return sum([player.alive for player in self.players.values()]) <= 1
     
-    ### State Machine Actions
+### State Machine Actions
     
     def setup_decks(self):
         for player in self.players.values():
@@ -428,7 +428,7 @@ class Root(Player):
     def end_game(self):
         self.send_all_and_update(game_proto.EXIT(), PlayerState.END)
     
-    ### Game methods
+### Game methods
 
     def generate_player_cards(self, player: PlayerSim):
         card1 = self.take_card(self.deck)
@@ -539,7 +539,7 @@ class Root(Player):
         
         return False
     
-    ### Helper methods
+### Helper methods
             
     def broadcast_lose(self, target: PlayerSim):
         if target is not None:
@@ -582,10 +582,9 @@ class Root(Player):
                 player.set_state(state)
                 self.expect_reply_from(player.id)
 
+
 class RootStateMachine(StateMachine):
     def __init__(self, root: Root):
-        # TODO: Add actions
-        
         super().__init__(State("IDLE", entry_action=None))
         self.add_transition("IDLE", "SETUP_DECK", root.all_players_ready)
         
