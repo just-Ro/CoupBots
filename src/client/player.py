@@ -40,7 +40,7 @@ class Player:
             print(end="")   # weird way to update the console buffer
             return None
 
-    def receive(self, message: str):
+    def receive(self, message: str) -> int:
         """
         Informs the player of a message.
         Here, the player may or may not reply to the message.
@@ -50,6 +50,7 @@ class Player:
 
         """
         raise NotImplementedError
+        return 0
 
     def printv(self, string: str):
         if self.verbose:
@@ -70,5 +71,6 @@ class Human(Player):
         self.ui = True
         self.checkout.put("HELLO")
         
-    def receive(self, message: str):
+    def receive(self, message: str) -> int:
         self.printui(message)
+        return 0

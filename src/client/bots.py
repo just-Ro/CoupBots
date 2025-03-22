@@ -18,7 +18,7 @@ class CoupBot(Player):
         self.verbose = True  # Error messages and connection status
         self.ui = False  # User interface like input prompts
 
-    def receive(self, message: str):
+    def receive(self, message: str) -> int:
         # TODO
         # Implement your bot here
 
@@ -41,6 +41,7 @@ class CoupBot(Player):
         # self.checkout.put(m)
         
         raise NotImplementedError
+        return 0
 
 
 class TestBot(Player, PlayerSim):
@@ -56,32 +57,45 @@ class TestBot(Player, PlayerSim):
         self.rcv_msg = GameMessage(OK)
         self.msg = GameMessage(HELLO)
         self.send_message(self.msg)
+        self.terminate_after_death = False
 
-    def receive(self, message: str):
+    def receive(self, message: str) -> int:
         try:
-            self.printv(green(str(message)))
+            self.printv(green("RECV - " + str(message)))
             m = GameMessage(message)
             self.pre_update_state(m)
             if self.state == PlayerState.IDLE:
                 pass
             elif self.state == PlayerState.END:
                 self.printv(blue("Game Over, terminating bot."))
-                # TODO: Add a way to terminate the bot
-                exit(0) # This dont werk
+                return 1
             else:
-                self.printv(f"State: {self.state}\n Possible messages: {self.possible_messages}")
+                # self.printv(f"State: {self.state}")
+                self.printv(str(self.possible_messages))
                 self.choose_message()
                 self.post_update_state(self.msg)
                 self.send_message(self.msg)
                 self.rcv_msg = m
-                self.printv(blue(str(self.msg)))
+                self.printv(blue("SEND - " + str(self.msg)))
         except IndexError:
             self.printv(red(f"No possible messages."))
         except Exception as e:
             self.printv(red(f"Error in receive: " + str(e)))
+        return 0
 
     def pre_update_state(self, message: GameMessage):
-        if message.command == HELLO:
+                        
+        if message.command == EXIT:
+            self.set_state(PlayerState.END)
+            self.printv(f"Received EXIT message.")
+        
+        elif not self.alive:
+            if self.terminate_after_death:
+                self.set_state(PlayerState.END)
+            else:
+                self.set_state(PlayerState.IDLE)
+        
+        elif message.command == HELLO:
             self.set_state(PlayerState.IDLE)
             self.printv(yellow(f"Received unexpected message: HELLO"))
         
@@ -257,9 +271,15 @@ class TestBot(Player, PlayerSim):
                     self.deck = [message.card1]
             else:
                 self.deck = []
+                self.alive = False
             
         elif message.command == CHOOSE:
-            self.set_state(PlayerState.R_CHOOSE)
+            if message.card1 is None or message.card2 is None:
+                self.set_state(PlayerState.IDLE)
+                self.printv(red(f"Invalid CHOOSE message: {message}"))
+            else:
+                self.exchange_cards = [message.card1, message.card2]
+                self.set_state(PlayerState.R_CHOOSE)
             
         elif message.command == PLAYER:
             self.set_state(PlayerState.R_PLAYER)
@@ -280,11 +300,7 @@ class TestBot(Player, PlayerSim):
             else:
                 self.turn = False
                 self.set_state(PlayerState.R_OTHER_TURN)
-                
-        elif message.command == EXIT:
-            self.set_state(PlayerState.END)
-            self.printv(f"Received EXIT message.")
-            
+   
         elif message.command == ILLEGAL:
             # keep in the same state
             self.printv(yellow(f"Received ILLEGAL message."))
@@ -302,6 +318,19 @@ class TestBot(Player, PlayerSim):
             
         elif message.command == BLOCK:
             self.tag = Tag.T_BLOCKING
+        
+        elif message.command == KEEP:
+            if message.card1 is not None:
+                if message.card2 is not None:
+                    self.deck = [message.card1, message.card2]
+                else:
+                    self.deck = [message.card1]
+                self.printv(f"New deck: {self.deck}")
+            else:
+                self.printv(red(f"Invalid KEEP message: {message}"))
+        
+        if not self.alive:
+            self.set_state(PlayerState.END)
     
     def choose_message(self):
         if len(self.possible_messages) == 0:
@@ -315,7 +344,7 @@ class TestBot(Player, PlayerSim):
         for m in self.possible_messages:
             msgs.append(GameMessage(m))
         for m in msgs:
-            if m.command == ACT and m.action == FOREIGN_AID:
+            if m.command == ACT and m.action == TAX:
                 self.msg = m
                 return
             elif m.command == BLOCK:

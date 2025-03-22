@@ -261,13 +261,11 @@ class PlayerSim:
         elif self.state == PlayerState.R_CHOOSE:
             options = self.deck + self.exchange_cards
             
-            # Player only has 1 card left alive
-            if len(options) == 2:
+            if len(self.deck) == 1:
                 for card in options:
                     messages.append(game_proto.KEEP(card))
-                    
-            # Player has 2 cards left alive
-            elif len(options) == 4:
+            
+            elif len(self.deck) == 2:
                 for card1, card2 in permutations(options, 2):
                     messages.append(game_proto.KEEP(card1, card2))
         

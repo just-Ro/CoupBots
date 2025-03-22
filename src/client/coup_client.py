@@ -24,7 +24,7 @@ class CoupClient(Client):
         net = NetworkMessage(message)
         if net.msg is not None:
             return str(net.msg)
-        raise SyntaxError("Invalid message format.")
+        raise SyntaxError(f"Invalid message format for message: \"{message}\"")
 
     def sender(self):
         try:
@@ -51,10 +51,11 @@ class CoupClient(Client):
             # Strip message address
             if not self.player.is_root:
                 message = self.addr_strip(message)
-            self.player.receive(message)
+            if self.player.receive(message):
+                self.signal = False
         
         except SyntaxError:
-            self.printv(yellow("Invalid message format."))
+            self.printv(yellow(f"Invalid message format for message: \"{message}\""))
             
         except NotImplementedError:
             self.printv(yellow("Method not implemented yet!"))

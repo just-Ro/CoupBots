@@ -31,16 +31,16 @@ class Root(Player):
         self.blocker_challenger = None
         self.turn_msg = None
             
-    def receive(self, net_msg: str):
+    def receive(self, net_msg: str) -> int:
         # Split origin address from the message 
         try:
             net = NetworkMessage(net_msg)
         except SyntaxError:
             self.printv(yellow(f"Invalid message format."))
-            return
+            return 0
         if net.msg is None or net.addr is None:
             self.printv(yellow(f"Received {net}"))
-            return
+            return 0
         
         # Check for disconnection message
         if net.msg == DISCONNECT:
@@ -49,8 +49,13 @@ class Root(Player):
             self.printv(f"Player {net.addr} disconnected.")
             self.players[net.addr].alive = False
             if self.game_over() and self.sm.current_state.name != "IDLE":
-                self.end_game()
-            return
+                if self.sm.current_state.name == "END":
+                    if sum([player.alive for player in self.players.values()]) == 0:
+                        self.printv(blue("All players disconnected, terminating root."))
+                        return 1
+                else:
+                    self.end_game()
+            return 0
         
         # Parse the message
         try:
@@ -61,7 +66,7 @@ class Root(Player):
             self.printv(yellow(f"Received from player {net.addr}: {net.msg}"))
             
             self.send_illegal(net.addr)
-            return
+            return 0
         
         # Create player state
         if game.command == HELLO:
@@ -73,17 +78,18 @@ class Root(Player):
                 # TODO: assign first unused ID instead of using the address
                 self.players[net.addr] = (PlayerSim(net.addr, self.players))
                 self.send_single_and_update(game_proto.PLAYER(str(net.addr)), net.addr, PlayerState.R_PLAYER)
-            return
+            return 0
         
         # Top-level state machine
         self.update_player_state(net.addr, game)
         if self.all_players_replied():
             self.sm.update()
-            self.printv("")
+            self.printv(green(f"Current state: {self.sm.current_state.name}"))
 
         self.debug_player_states()
         self.debug_player_possible_messages()
-
+        return 0
+    
 ### Player States
     
     def update_player_state(self, orig: str, m: GameMessage):
@@ -107,17 +113,21 @@ class Root(Player):
                 return
             
         elif self.sm.current_state.name in ("FAID", "TAX", "EXCHANGE", "ASSASS", "STEAL"):  # Waiting for players to reply to the action
+            player.tag = Tag.T_NONE
             if m.command == BLOCK:
                 if self.turn_blocker is None:
+                    player.tag = Tag.T_BLOCKING
                     self.turn_blocker = player
             
             elif m.command == CHAL:
                 if self.turn_challenger is None:
+                    player.tag = Tag.T_CHALLENGING
                     self.turn_challenger = player
             
         elif self.sm.current_state.name.endswith("BLOCK"):   # Waiting for players to reply to the block
             if m.command == CHAL:
                 if self.blocker_challenger is None:
+                    player.tag = Tag.T_CHALLENGING
                     self.blocker_challenger = player
             
         elif self.sm.current_state.name == "EXCHANGE_CHOOSE":
@@ -214,7 +224,7 @@ class Root(Player):
         return self.blocker_challenger is not None and self.blocker_challenger.msg.card1 == CAPTAIN
     
     def turn_is_bluff(self):
-        return self.turn_msg is not None and self.turn_msg.command == LOSE
+        return self.turn_id is not None and self.players[self.turn_id].msg.command == LOSE
     
     def block_is_bluff(self):
         return self.turn_blocker is not None and self.turn_blocker.msg.command == LOSE
@@ -369,10 +379,7 @@ class Root(Player):
     
     def send_choose(self):
         if self.turn_id is not None:
-            if len(self.players[self.turn_id].deck) == 1:
-                self.players[self.turn_id].exchange_cards = [self.take_card(self.deck)]
-            else:
-                self.players[self.turn_id].exchange_cards = [self.take_card(self.deck), self.take_card(self.deck)]
+            self.players[self.turn_id].exchange_cards = [self.take_card(self.deck), self.take_card(self.deck)]
             self.send_single_and_update(game_proto.CHOOSE(*self.players[self.turn_id].exchange_cards), self.turn_id, PlayerState.R_CHOOSE)
     
     def assassinate_pay(self):
@@ -776,7 +783,8 @@ class RootStateMachine(StateMachine):
                         transitions={"TURN": auto})
         self.new_state("STEAL_BLOCK",
                         entry_action=root.send_steal_block,
-                        transitions={"STEAL_BLOCK_CHAL": root.block_has_challenge,
+                        transitions={"STEAL_BLOCK_CHAL_B": root.block_has_challenge_AMB,
+                                     "STEAL_BLOCK_CHAL_C": root.block_has_challenge_CAP,
                                      "TURN": auto})
         self.new_state("STEAL_BLOCK_CHAL_B",
                         entry_action=root.send_challenge_AMB,
