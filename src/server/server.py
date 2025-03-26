@@ -1,6 +1,7 @@
 import socket
 import threading
 from utils.colored_text import red, green, yellow, blue
+from utils.verbose import Verbose
 
 
 CLIENT_TIMEOUT = 1.0  # Timeout for client socket
@@ -10,7 +11,7 @@ DEFAULT_ADDR = True  # Use default address for messages
 
 
 # Client class, new instance created for each connected client
-class Client(threading.Thread):
+class Client(threading.Thread, Verbose):
     def __init__(self, socket: socket.socket, address, id, name, signal, server: "Server", verbose=True):
         threading.Thread.__init__(self)
         self.socket = socket
@@ -50,13 +51,10 @@ class Client(threading.Thread):
                     self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                 self.server.remove_client(self)
                 break
-    
-    def printv(self, string: str):
-        if self.verbose:
-            print(f"[{str(self.__class__.__name__)}] {string}")
 
 
-class Server(threading.Thread):
+
+class Server(threading.Thread, Verbose):
     def __init__(self, host="localhost", port=12345, verbose=True):
         threading.Thread.__init__(self)
         self.host = host
@@ -129,10 +127,6 @@ class Server(threading.Thread):
             client.join()
 
         self.printv("Server terminated.")
-
-    def printv(self, string: str):
-        if self.verbose:
-            print(f"[{str(self.__class__.__name__)}] {string}")
 
 
 def main():

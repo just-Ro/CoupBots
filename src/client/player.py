@@ -2,11 +2,12 @@ from .game.core import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHA
 from .game.core import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
 from terminal.terminal import Terminal
 from utils.colored_text import red, green, yellow, blue
+from utils.verbose import Verbose
 import queue
 
 CHECKOUT_TIMEOUT = 0.5
 
-class Player:
+class Player(Verbose):
     """
     Abstract class for a player in the game.
     """
@@ -52,13 +53,6 @@ class Player:
         raise NotImplementedError
         return 0
 
-    def printv(self, string: str):
-        if self.verbose:
-            print(f"[{str(self.__class__.__name__)}] {string}")
-
-    def printui(self, string: str):
-        if self.ui:
-            print(string)
 
 class Human(Player):
     """

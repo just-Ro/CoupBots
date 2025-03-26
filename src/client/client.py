@@ -2,11 +2,12 @@ import socket
 import threading
 import sys
 from utils.colored_text import red, green, yellow, blue
+from utils.verbose import Verbose
 
 
 DEFAULT_ADDR = True  # Use default address for messages
 
-class Client:
+class Client(Verbose):
     def __init__(self, host="localhost", port=12345):
         self.host = host
         self.port = port
@@ -136,14 +137,6 @@ class Client:
         self.__connect__()
         self.__start_receiving__()
         self.sender()
-
-    def printv(self, string: str):
-        if self.verbose:
-            print(f"[{str(self.__class__.__name__)}] {string}")
-
-    def printui(self, string: str):
-        if self.ui:
-            print(string)
 
 
 if __name__ == "__main__":
