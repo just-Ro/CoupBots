@@ -104,7 +104,7 @@ class Client(Verbose):
         while self.signal:
             try:
                 if self.socket is not None:
-                    data = self.socket.recv(32)
+                    data = self.socket.recv(256)
                     if data:
                         buffer += data.decode("utf-8")
                         while "\n" in buffer:

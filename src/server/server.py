@@ -29,7 +29,7 @@ class Client(threading.Thread, Verbose):
     def run(self):
         while self.signal:
             try:
-                data = self.socket.recv(32)
+                data = self.socket.recv(256)
                 if data:
                     # Pass the received data to the server for broadcasting
                     self.server.route_message(self, data)

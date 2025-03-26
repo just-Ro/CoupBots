@@ -30,14 +30,18 @@ class Root(Player):
         self.turn_blocker = None
         self.blocker_challenger = None
         self.turn_msg = None
-            
+    
     def receive(self, net_msg: str) -> int:
-        # Split origin address from the message 
         try:
-            net = NetworkMessage(net_msg)
+            nets = NetworkMessage.from_string(net_msg)
+            for net in nets:
+                if self.receive_single(net):
+                    return 1
         except SyntaxError:
             self.printv(yellow(f"Invalid message format."))
-            return 0
+        return 0
+       
+    def receive_single(self, net: NetworkMessage) -> int:
         if net.msg is None or net.addr is None:
             self.printv(yellow(f"Received {net}"))
             return 0

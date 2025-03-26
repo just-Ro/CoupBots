@@ -159,5 +159,7 @@ class GameMessage(BaseMsg):
         self.coins = self.args.get("coins", None)
         self.command = self.msg_type
 
-    
+    @classmethod
+    def from_string(cls, msg: str):
+        return [cls(part) for part in msg.strip(game_proto.term).split(game_proto.term)]
         

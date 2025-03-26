@@ -2,6 +2,7 @@ from client.coup_client import CoupClient
 from client.bots import CoupBot, TestBot
 from utils.print_logger import log_to_file, disable_logging
 import sys
+import logging
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -27,5 +28,6 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         bot_number = sys.argv[1]
-        log_to_file(f"../log/bot{bot_number}.ans")
+        #log_to_file(f"../log/bot{bot_number}.ans")
     main()
+    #disable_logging()

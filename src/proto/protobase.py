@@ -93,6 +93,10 @@ class BaseMsg:
         self.proto = proto
         self.msg_type, self.args = proto.parse(msg)
 
+    @classmethod
+    def from_string(cls, proto: Proto, msg: str):
+        return [cls(proto, part) for part in msg.strip(proto.term).split(proto.term)]
+
     def __str__(self):
         return self.proto.serialize(self.msg_type, self.args)
        

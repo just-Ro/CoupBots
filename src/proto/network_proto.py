@@ -47,5 +47,11 @@ class NetworkMessage(BaseMsg):
         self.addr = self.args.get("addr", None)
         self.msg = self.args.get("msg", None)
 
+    @classmethod
+    def from_string(cls, msg: str):
+        return [cls(part) for part in msg.strip(network_proto.term).split(network_proto.term)]
     
-        
+if __name__ == "__main__":
+    msg = "EXCEPT@2@LOSE 2 B\nSINGLE@2@DECK"
+    net = NetworkMessage(msg)
+    print(net)

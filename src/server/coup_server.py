@@ -21,32 +21,34 @@ class CoupServer(Server):
         
         # If the message is not addressed, address it to root
         try:
-            net = NetworkMessage(net_msg_str)
+            nets = NetworkMessage.from_string(net_msg_str)
         except SyntaxError:
             self.printv(yellow("Invalid message format."))
             return
         
-        if net.msg is None:
-            self.printv(yellow("Empty message."))
-            return
+        for net in nets:
+            
+            if net.msg is None:
+                self.printv(yellow("Empty message."))
+                continue
 
-        if net.msg_type == SINGLE:
-            # Direct message to a specific client
-            if net.addr is None:
-                self.printv(yellow("No address specified for single message."))
-            else:
-                self.send_to_client(sender, net.msg, int(net.addr))
-                
-        elif net.msg_type == EXCEPT:
-            # Broadcast to everyone except sender and the client with the specified ID
-            if net.addr is None:
-                self.printv(yellow("No address specified for except message."))
-            else:
-                self.broadcast_except(sender, net.msg, int(net.addr))
-                
-        elif net.msg_type == ALL:
-            # Broadcast to everyone except sender
-            self.broadcast_except(sender, net.msg, int(sender.id))
+            if net.msg_type == SINGLE:
+                # Direct message to a specific client
+                if net.addr is None:
+                    self.printv(yellow("No address specified for single message."))
+                else:
+                    self.send_to_client(sender, net.msg, int(net.addr))
+                    
+            elif net.msg_type == EXCEPT:
+                # Broadcast to everyone except sender and the client with the specified ID
+                if net.addr is None:
+                    self.printv(yellow("No address specified for except message."))
+                else:
+                    self.broadcast_except(sender, net.msg, int(net.addr))
+                    
+            elif net.msg_type == ALL:
+                # Broadcast to everyone except sender
+                self.broadcast_except(sender, net.msg, int(sender.id))
             
         
     def broadcast_except(self, sender: Client, message: str, exclude_client_id: int):
