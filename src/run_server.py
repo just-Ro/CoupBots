@@ -1,11 +1,11 @@
 from server.coup_server import CoupServer
 from client.coup_client import CoupClient
 from client.root import TestRoot, Root
+from utils.print_logger import log_to_file, disable_logging
 
 
 DEFAULT_ADDR = True  # Use default address for messages
-SERVER_VERBOSE = False  # Control all prints from CoupServer
-
+SERVER_VERBOSE = True  # Control all prints from CoupServer
 
 def main():
     # Get host and port
@@ -35,7 +35,9 @@ def main():
     except:
         server.shutdown()
         client.signal = False
+    disable_logging()
 
 
 if __name__ == "__main__":
+    log_to_file("../log/server.ans")
     main()
