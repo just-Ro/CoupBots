@@ -179,6 +179,8 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_C)
                     elif self.rcv_msg.card1 == DUKE:
                         self.set_state(PlayerState.R_CHAL_D)
+                    elif self.rcv_msg.card1 == CONTESSA:
+                        self.set_state(PlayerState.R_CHAL_E)
                     else:
                         self.set_state(PlayerState.IDLE)
                         self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
@@ -327,7 +329,7 @@ class TestBot(Player, PlayerSim):
                     self.deck = [message.card1]
                 self.printv(f"New deck: {self.deck}")
             else:
-                self.printv(red(f"Invalid KEEP message: {message}"))
+                self.printv(red(f"Invalid message: {message}"))
         
         if not self.alive:
             self.set_state(PlayerState.END)
