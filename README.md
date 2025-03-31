@@ -60,41 +60,43 @@ Below is the full list of the accepted Protocol messages.
 
 | Command | Description |
 |---------|-------------|
-| `ACT\|ID1\|ACTION\|ID2`    | Player Action: `ID1` = Player ID, `ACTION` = Action type, `ID2` = Target Player ID (if applicable) |
-| `OK`                       | Allow Action/Block or acknowledge information |
-| `BLOCK\|ID1\|card`         | Block Action: `ID1` = Player ID blocking an action, `card` = Character used to block |
-| `CHAL\|ID1`                | Challenge Action: `ID1` = Player ID challenging an action or block |
-| `SHOW\|ID1\|card`          | Player Card Reveal: `ID1` = Player ID, `card` = Character card to reveal |
-| `LOSE\|ID1\|card`          | Lose Influence: `ID1` = Player ID, `card` = Character card lost |
-| `COINS\|ID1\|coins`        | Update Coins: `ID1` = Player ID, `coins` = Current coin count |
-| `DECK\|card1\|card2`       | Inform Player of Current Deck: `card1` = First card, `card2` = Second card (available depending on the game state) |
-| `CHOOSE\|card1\|card2`     | Ask Player to Choose Cards to Exchange: `card1` = First choice, `card2` = Second choice (available depending on the game state) |
-| `KEEP\|card1\|card2`       | Player Chooses Which 2 Cards to Keep: `card1` = First card to keep, `card2` = Second card to keep (available depending on the game state) |
-| `HELLO`                    | Register on the Root to obtain ID |
-| `PLAYER\|ID1`              | Broadcast ID of a registered player: `ID1` = Registered player ID |
-| `START`                    | Sync all players to start game. |
-| `READY`                    | Player tells it's ready |
-| `TURN\|ID1`                | Ask a player for an action: `ID1` = Player ID |
-| `EXIT`                     | Remove player from game |
-| `ILLEGAL`                  | Player made an illegal move |
+| `ACT ID1 ACTION ID2`      | Player Action: `ID1` = Player ID, `ACTION` = Action type, `ID2` = Target Player ID (if applicable) |
+| `OK`                      | Allow Action/Block or acknowledge information |
+| `BLOCK ID1 card`          | Block Action: `ID1` = Player ID blocking an action, `card` = Character used to block |
+| `CHAL ID1`                | Challenge Action: `ID1` = Player ID challenging an action or block |
+| `SHOW ID1 card`           | Player Card Reveal: `ID1` = Player ID, `card` = Character card to reveal |
+| `LOSE ID1 card`           | Lose Influence: `ID1` = Player ID, `card` = Character card lost |
+| `COINS ID1 coins`         | Update Coins: `ID1` = Player ID, `coins` = Current coin count |
+| `DECK card1 card2`        | Inform Player of Current Deck: `card1` = First card (if applicable), `card2` = Second card (if applicable) |
+| `CHOOSE card1 card2`      | Ask Player to Choose Cards to Exchange: `card1` = First choice, `card2` = Second choice |
+| `KEEP card1 card2`        | Player Chooses Which 2 Cards to Keep: `card1` = First card to keep, `card2` = Second card to keep (if applicable) |
+| `HELLO`                   | Register on the Root to obtain ID |
+| `PLAYER ID1`              | Broadcast ID of a registered player: `ID1` = Registered player ID |
+| `START`                   | Sync all players to start game. |
+| `READY`                   | Player tells it's ready |
+| `TURN ID1`                | Ask a player for an action: `ID1` = Player ID |
+| `EXIT`                    | Remove player from game |
+| `DEAD ID1`                | Announce player `ID1` is out of the game |
+| `ILLEGAL`                 | Player made an illegal move |
 
 ## Message origins and reply limitations
 
 These are all possible messages each **Client** can receive and all possible replies:
 | Receive | Reply |
 |---------|-------|
-| `ACT\|ID1\|ACTION\|ID2` | `OK`, `CHAL\|ID1`, `BLOCK\|ID1\|card`, `LOSE\|ID1\|card` |
-| `BLOCK\|ID1\|card` | `OK`, `CHAL\|ID1` |
-| `CHAL\|ID1` | `OK`, `SHOW\|ID1\|card`, `LOSE\|ID1\|card` |
-| `SHOW\|ID1\|card` | `OK`, `LOSE\|ID1\|card` |
-| `LOSE\|ID1\|card` | `OK` |
-| `COINS\|ID1\|coins` | `OK` |
-| `DECK\|card1\|card2` | `OK` |
-| `CHOOSE\|card1\|card2` | `KEEP\|card1\|card2` |
-| `PLAYER\|ID1` | `OK` |
+| `ACT ID1 ACTION ID2` | `OK`, `CHAL ID1`, `BLOCK ID1 card`, `LOSE ID1 card` |
+| `BLOCK ID1 card` | `OK`, `CHAL ID1` |
+| `CHAL ID1` | `OK`, `SHOW ID1 card`, `LOSE ID1 card` |
+| `SHOW ID1 card` | `OK`, `LOSE ID1 card` |
+| `LOSE ID1 card` | `OK` |
+| `COINS ID1 coins` | `OK` |
+| `DECK card1 card2` | `OK` |
+| `CHOOSE card1 card2` | `KEEP card1 card2` |
+| `PLAYER ID1` | `OK` |
 | `START` | `READY` |
-| `TURN\|ID1` | `OK`, `ACT\|ID1\|ACTION\|ID2` |
+| `TURN ID1` | `OK`, `ACT ID1 ACTION ID2` |
 | `EXIT` | None |
+| `DEAD ID1` | None |
 | `ILLEGAL` | ** |
 
 \* The **Client** should reply `OK` if ID1 is not its own ID.
@@ -151,7 +153,9 @@ To startup the game, there is a sequence of commands that must be used to initia
 #### P1
 1. Player ---> Root: `CHAL|P1`
 2. Player <--- Root: `SHOW|P2|card`
-3. Player ---> Root: `LOSE|P1|card`
+3. Player ---> Root: `OK`
+4. Player <--- Root: `LOSE`
+5. Player ---> Root: `LOSE|P1|card`
 
 #### P2
 1. Player <--- Root: `CHAL|P1`

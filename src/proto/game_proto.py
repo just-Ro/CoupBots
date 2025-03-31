@@ -19,6 +19,7 @@ START = "START"
 READY = "READY"
 TURN = "TURN"
 EXIT = "EXIT"
+DEAD = "DEAD"
 ILLEGAL = "ILLEGAL"
 
 def _check_action(action):
@@ -68,7 +69,7 @@ class GameProto(Proto):
 
             MsgType(CHOOSE, 
                 MsgArg("card1", _check_card), 
-                MsgArg("card2", _check_card, False)),
+                MsgArg("card2", _check_card)),
 
             MsgType(KEEP, 
                 MsgArg("card1", _check_card), 
@@ -87,6 +88,9 @@ class GameProto(Proto):
                 MsgArg("ID1", _check_id)),
             
             MsgType(EXIT),
+            
+            MsgType(DEAD,
+                    MsgArg("ID1", _check_id)),
             
             MsgType(ILLEGAL)
         )
@@ -119,7 +123,7 @@ class GameProto(Proto):
     def DECK(self, card1=None, card2=None):
         return self.serialize(DECK, {"card1": card1, "card2": card2})
     
-    def CHOOSE(self, card1, card2=None):
+    def CHOOSE(self, card1, card2):
         return self.serialize(CHOOSE, {"card1": card1, "card2": card2})
     
     def KEEP(self, card1, card2=None):
@@ -142,6 +146,9 @@ class GameProto(Proto):
     
     def EXIT(self):
         return self.serialize(EXIT, {})
+
+    def DEAD(self, ID1):
+        return self.serialize(DEAD, {"ID1": ID1})
     
     def ILLEGAL(self):
         return self.serialize(ILLEGAL, {})
