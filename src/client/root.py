@@ -90,8 +90,8 @@ class Root(Player):
             self.sm.update()
             self.printv(green(f"Current state: {self.sm.current_state.name}"))
 
-        self.debug_player_states()
-        self.debug_player_possible_messages()
+        # self.debug_player_states()
+        # self.debug_player_possible_messages()
         return 0
     
 ### Player States
@@ -222,10 +222,10 @@ class Root(Player):
         return self.blocker_challenger is not None
     
     def block_has_challenge_AMB(self):
-        return self.blocker_challenger is not None and self.blocker_challenger.msg.card1 == AMBASSADOR
+        return self.blocker_challenger is not None and self.turn_blocker is not None and self.turn_blocker.msg.card1 == AMBASSADOR
     
     def block_has_challenge_CAP(self):
-        return self.blocker_challenger is not None and self.blocker_challenger.msg.card1 == CAPTAIN
+        return self.blocker_challenger is not None and self.turn_blocker is not None and self.turn_blocker.msg.card1 == CAPTAIN
     
     def turn_is_bluff(self):
         return self.turn_id is not None and self.players[self.turn_id].msg.command == LOSE
