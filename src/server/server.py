@@ -1,7 +1,6 @@
 import socket
 import threading
-from utils.colored_text import red, green, yellow, blue
-from utils.verbose import Verbose
+from loguru import logger
 
 
 CLIENT_TIMEOUT = 1.0  # Timeout for client socket
@@ -11,12 +10,11 @@ DEFAULT_ADDR = True  # Use default address for messages
 
 
 # Client class, new instance created for each connected client
-class Client(threading.Thread, Verbose):
-    def __init__(self, socket: socket.socket, address, id, name, signal, server: "Server", verbose=True):
+class Client(threading.Thread):
+    def __init__(self, socket: socket.socket, address, id, name, signal, server: "Server"):
         threading.Thread.__init__(self)
         self.socket = socket
         self.address = address
-        self.verbose = verbose
         self.id = id
         self.name = name
         self.signal = signal
@@ -34,32 +32,31 @@ class Client(threading.Thread, Verbose):
                     # Pass the received data to the server for broadcasting
                     self.server.route_message(self, data)
                 else:
-                    self.printv(f"Client {self.id} has disconnected")
+                    logger.info(f"Client {self.id} has disconnected")
                     self.signal = False
                     if self.server.broadcast_disconnection:
-                        self.printv("Broadcasting disconnection message.")
+                        logger.info("Broadcasting disconnection message.")
                         self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                     self.server.remove_client(self)
                     break
             except (socket.timeout, UnicodeDecodeError):
                 continue
             except OSError:
-                self.printv(f"Client {self.id} has disconnected")
+                logger.info(f"Client {self.id} has disconnected")
                 self.signal = False
                 if self.server.broadcast_disconnection:
-                    self.printv("Broadcasting disconnection message.")
+                    logger.info("Broadcasting disconnection message.")
                     self.server.route_message(self, self.server.disconnection_message.encode("utf-8"))
                 self.server.remove_client(self)
                 break
 
 
 
-class Server(threading.Thread, Verbose):
-    def __init__(self, host="localhost", port=12345, verbose=True):
+class Server(threading.Thread):
+    def __init__(self, host="localhost", port=12345):
         threading.Thread.__init__(self)
         self.host = host
         self.port = port
-        self.verbose = verbose
         self.socket = None
         self.signal = True
         self.connections: list[Client] = []  # Store connected clients
@@ -73,7 +70,7 @@ class Server(threading.Thread, Verbose):
         self.socket.bind((self.host, self.port))
         self.socket.listen(MAX_CONNECTIONS)
         self.socket.settimeout(SERVER_TIMEOUT)  # Add a timeout so the accept loop can regularly check for shutdown
-        self.printv(green(f"Server listening on {self.host}:{self.port}"))
+        logger.success(f"Server listening on {self.host}:{self.port}")
 
     def run(self):
         self.setup_socket()
@@ -86,17 +83,17 @@ class Server(threading.Thread, Verbose):
                     break
                 sock, address = self.socket.accept()
                 # TODO: assign the first available client id 
-                new_client = Client(sock, address, self.total_connections, "Name", True, self, self.verbose)
+                new_client = Client(sock, address, self.total_connections, "Name", True, self)
                 self.connections.append(new_client)
                 new_client.start()
-                self.printv(green(f"New connection at ID {new_client}"))
+                logger.success(f"New connection at ID {new_client}")
                 self.total_connections += 1
             except OSError:
                 continue
 
     def route_message(self, sender: Client, message: bytes):
         """Broadcast a message from the sender to all other connected clients."""
-        self.printv(f"Broadcasting from ID {sender.id}: {message.decode('utf-8')}")
+        logger.info(f"Broadcasting from ID {sender.id}: {message.decode('utf-8')}")
         for client in self.connections:
             if client.id != sender.id:  # Do not send the message back to the sender
                 try:
@@ -108,11 +105,11 @@ class Server(threading.Thread, Verbose):
         """Helper method to remove a client from the server's connection list."""
         if client in self.connections:
             self.connections.remove(client)
-            self.printv(f"Client {client.address} removed from server.")
+            logger.info(f"Client {client.address} removed from server.")
 
     def shutdown(self):
         """Gracefully shut down the server and all client connections."""
-        self.printv("\nServer shutting down...")
+        logger.info("Server shutting down...")
 
         # Clean up: close the main server socket
         if self.socket:
@@ -126,7 +123,7 @@ class Server(threading.Thread, Verbose):
             client.signal = False
             client.join()
 
-        self.printv("Server terminated.")
+        logger.info("Server terminated.")
 
 
 def main():

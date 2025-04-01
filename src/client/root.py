@@ -6,9 +6,9 @@ from .game.core import *
 from .game.state_machine import PlayerState, Tag, PlayerSim
 from .player import Player
 from state_machine.state import State, StateMachine
-from utils.colored_text import red, green, yellow, blue
 import random
 import itertools
+from loguru import logger
 
 
 class Root(Player):
@@ -20,7 +20,6 @@ class Root(Player):
 
     def __init__(self):
         super().__init__()
-        self.verbose = True
         self.is_root = True
         self.players: dict[str, PlayerSim] = {}
         self.turn_id = None
@@ -38,24 +37,24 @@ class Root(Player):
                 if self.receive_single(net):
                     return 1
         except SyntaxError:
-            self.printv(yellow(f"Invalid message format."))
+            logger.warning(f"Invalid message format.")
         return 0
        
     def receive_single(self, net: NetworkMessage) -> int:
         if net.msg is None or net.addr is None:
-            self.printv(yellow(f"Received {net}"))
+            logger.warning(f"Received {net}")
             return 0
         
         # Check for disconnection message
         if net.msg == DISCONNECT:
             # Remove player from the game
             # TODO: let other players know that this player disconnected
-            self.printv(f"Player {net.addr} disconnected.")
+            logger.info(f"Player {net.addr} disconnected.")
             self.players[net.addr].alive = False
             if self.game_over() and self.sm.current_state.name != "IDLE":
                 if self.sm.current_state.name == "END":
                     if sum([player.alive for player in self.players.values()]) == 0:
-                        self.printv(blue("All players disconnected, terminating root."))
+                        logger.info("All players disconnected, terminating root.")
                         return 1
                 else:
                     self.end_game()
@@ -64,13 +63,14 @@ class Root(Player):
         # Parse the message
         try:
             game = GameMessage(net.msg)
-            self.printv(f"Received from player {net.addr}: {net.msg}")
         except SyntaxError:
             # Player message breaks Protocol
-            self.printv(yellow(f"Received from player {net.addr}: {net.msg}"))
+            logger.warning(f"Player {net.addr}: {net.msg}")
             
             self.send_illegal(net.addr)
             return 0
+        
+        logger.success(f"Player {net.addr}: {net.msg}")
         
         # Create player state
         if game.command == HELLO:
@@ -88,10 +88,10 @@ class Root(Player):
         self.update_player_state(net.addr, game)
         if self.all_players_replied():
             self.sm.update()
-            self.printv(green(f"Current state: {self.sm.current_state.name}"))
+            logger.debug(f"Current state: {self.sm.current_state.name}")
 
-        # self.debug_player_states()
-        # self.debug_player_possible_messages()
+        self.debug_player_states()
+        self.debug_player_possible_messages()
         return 0
     
 ### Player States
@@ -143,7 +143,7 @@ class Root(Player):
                     else:
                         player.deck = [m.card1]
                 else:
-                    self.printv(red("No cards to exchange."))
+                    logger.error("No cards to exchange.")
                     return
             
         player.set_state(PlayerState.IDLE)
@@ -172,16 +172,16 @@ class Root(Player):
                 player.set_state(state)
     
     def debug_player_states(self):
-        self.printv("Player states:")
+        logger.debug("Player states:")
         for player in self.players.values():
             if player.alive:
-                self.printv(f"ID{player.id}: {player.state}")
+                logger.debug(f"ID{player.id}: {player.state}")
     
     def debug_player_possible_messages(self):
-        self.printv("Possible messages:")
+        logger.debug("Possible messages:")
         for player in self.players.values():
             if player.alive:
-                self.printv(f"ID{player.id}: {player.possible_messages}")
+                logger.debug(f"ID{player.id}: {player.possible_messages}")
 
 ### State Machine Conditions
     
@@ -258,12 +258,13 @@ class Root(Player):
     def send_turn(self):
         self.next_player_turn()
         if self.turn_id is None:
-            self.printv(red("No player has the turn."))
+            logger.error("No player has the turn.")
             return
         
         self.set_all_states(PlayerState.R_OTHER_TURN)
         self.send_all_and_update(game_proto.TURN(self.turn_id), PlayerState.R_OTHER_TURN)
         self.players[self.turn_id].set_state(PlayerState.R_MY_TURN)
+        logger.success(f"New Turn: Player {self.turn_id}")
     
     def reset_turn(self):
         self.turn_blocker = None
@@ -445,7 +446,7 @@ class Root(Player):
         card1 = self.take_card(self.deck)
         card2 = self.take_card(self.deck)
         if card1 is None or card2 is None:
-            self.printv(red("Not enough cards in the deck."))
+            logger.error("Not enough cards in the deck.")
             return
         player.deck = [card1, card2]
         
@@ -455,7 +456,7 @@ class Root(Player):
     
     def replace_player_card(self, player: PlayerSim, card: str):
         if card not in player.deck:
-            self.printv(red(f"Invalid card to replace: {card}"))
+            logger.error(f"Invalid card to replace: {card}")
             return
         player.deck.remove(card)
         new_card = self.replace_card(self.deck, card)
@@ -502,7 +503,7 @@ class Root(Player):
 
     def do_action(self, msg: GameMessage, turn: PlayerSim, target: PlayerSim | None):
         if turn is None or msg is None:
-            self.printv(red("Error doing action: No player has the turn"))
+            logger.error("Error doing action: No player has the turn")
             return True
         
         if msg.action == INCOME:
@@ -527,25 +528,25 @@ class Root(Player):
             
         elif msg.action == ASSASSINATE:
             if target is None:
-                self.printv(red("Error doing action: No target for assassination."))
+                logger.error("Error doing action: No target for assassination.")
                 return True
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
             
         elif msg.action == STEAL:
             if target is None:
-                self.printv(red("Error doing action: No target for stealing."))
+                logger.error("Error doing action: No target for stealing.")
                 return True
             turn.coins += min(MAX_COIN_STEAL, target.coins)
             self.send_all_and_update(game_proto.COINS(self.turn_id, turn.coins), PlayerState.R_COINS)
             
         elif msg.action == COUP:
             if target is None:
-                self.printv(red("Error doing action: No target for coup."))
+                logger.error("Error doing action: No target for coup.")
                 return True
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
             
         else:
-            self.printv(red(f"Invalid action: {msg.action}"))
+            logger.error(f"Invalid action: {msg.action}")
             return True
         
         return False
@@ -561,15 +562,15 @@ class Root(Player):
                 target.alive = False
     
     def _send_single(self, game_msg: str, dest: str):
-        self.printv(f"Sent to player {dest}: {game_msg}")
+        logger.info(f"Sent to player {dest}: {game_msg}")
         self.checkout.put(network_proto.SINGLE(dest, game_msg))
     
     def _send_all(self, game_msg: str):
-        self.printv(f"Sent to ALL players: {game_msg}")
+        logger.info(f"Sent to ALL players: {game_msg}")
         self.checkout.put(network_proto.ALL(game_msg))
     
     def _send_except(self, game_msg: str, exclude: str):
-        self.printv(f"Sent to all except player {exclude}: {game_msg}")
+        logger.info(f"Sent to all except player {exclude}: {game_msg}")
         self.checkout.put(network_proto.EXCEPT(exclude, game_msg))
 
     def send_illegal(self, dest: str):
@@ -792,7 +793,7 @@ class RootStateMachine(StateMachine):
                                      "TURN": auto})
         self.new_state("STEAL_BLOCK_CHAL_B",
                         entry_action=root.send_challenge_AMB,
-                        transitions={"STEAL_BLOCK_CHAL_BLUFF": root.turn_is_bluff,
+                        transitions={"STEAL_BLOCK_CHAL_BLUFF": root.block_is_bluff,
                                      "STEAL_BLOCK_CHAL_FAIL_1": auto})
         self.new_state("STEAL_BLOCK_CHAL_C",
                         entry_action=root.send_challenge_CAP,
@@ -869,27 +870,27 @@ class TestRoot(Player):
             net = NetworkMessage(net_msg)
             if net.msg is not None and net.msg == DISCONNECT:
                 if net.addr is not None:
-                    self.printv(f"ID{int(net.addr):02d} disconnected.")
+                    logger.info(f"ID{int(net.addr):02d} disconnected.")
                     return
             if net.msg is not None:
                 game = GameMessage(net.msg)
         except SyntaxError:
-            self.printv(yellow(f"Invalid message format."))
+            logger.warning(f"Invalid message format.")
             return
         if net.addr is None:
-            self.printv(yellow(f"ID?? -> {net.msg}"))
+            logger.warning(f"ID?? -> {net.msg}")
             return
-        self.printv(f"ID{int(net.addr):02d} -> {net.msg}")
+        logger.info(f"ID{int(net.addr):02d} -> {net.msg}")
         
     def send_single(self, game_msg: str, dest: str):
-        self.printv(f"ID{int(dest):02d} <- {game_msg}")
+        logger.info(f"ID{int(dest):02d} <- {game_msg}")
         self.checkout.put(network_proto.SINGLE(dest, game_msg))
     
     def send_all(self, game_msg: str):
-        self.printv(f"ALL <- {game_msg}")
+        logger.info(f"ALL <- {game_msg}")
         self.checkout.put(network_proto.ALL(game_msg))
     
     def send_except(self, game_msg: str, exclude: str):
-        self.printv(f"NOT ID{exclude} <- {game_msg}")
+        logger.info(f"NOT ID{exclude} <- {game_msg}")
         self.checkout.put(network_proto.EXCEPT(exclude, game_msg))
         

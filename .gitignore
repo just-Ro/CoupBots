@@ -3,4 +3,4 @@ __pycache__
 MarkdownIntro.md
 test.py
 notes.txt
-*.ans
+*.log

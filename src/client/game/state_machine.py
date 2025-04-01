@@ -4,23 +4,6 @@ from .core import *
 from itertools import permutations
 
 
-class State(Enum):
-    IDLE = auto()
-    START = auto()
-    TURN = auto()
-    ACTION = auto()
-    DO_ACTION = auto()
-    BLOCK = auto()
-    CHAL = auto()
-    END = auto()
-
-class SubState(Enum):
-    DEFAULT = auto()  # default substate 
-    START_COINS = auto()
-    DO_ACTION_STEAL_TARGET_COINS = auto()
-    DO_ACTION_ASSASS_TURN_COINS = auto()
-    DO_ACTION_COUP_TURN_COINS = auto()
-
 class PlayerState(Enum):
     IDLE = auto()
     START = auto()
@@ -98,7 +81,7 @@ class PlayerSim:
         messages = []
 
         # If the player is dead or can't reply, they can't send any messages
-        if not self.alive or self.state == State.IDLE:
+        if not self.alive or self.state == PlayerState.IDLE:
             return messages
             
         # Wait for all players to be ready
@@ -148,8 +131,7 @@ class PlayerSim:
         elif self.state == PlayerState.R_ASSASS_ME:
             messages.append(game_proto.CHAL(self.id))
             messages.append(game_proto.BLOCK(self.id, CONTESSA))
-            for card in self.deck:
-                messages.append(game_proto.LOSE(self.id, card))
+            messages.append(game_proto.OK())
                 
         elif self.state == PlayerState.R_ASSASS:
             messages.append(game_proto.OK())

@@ -2,7 +2,7 @@ from .client import Client
 from .player import Player, Human
 from proto.network_proto import SINGLE, EXCEPT, ALL
 from proto.network_proto import network_proto, NetworkMessage
-from utils.colored_text import red, green, yellow, blue
+from loguru import logger
 
 
 DEFAULT_ADDR = True  # Use default address for messages
@@ -14,8 +14,6 @@ class CoupClient(Client):
 
         # Get console configuration from player
         self.player = player
-        self.verbose = player.verbose
-        self.ui = player.ui
 
     def addr_root(self, message: str):
         return network_proto.SINGLE(ROOT_ADDR, message)
@@ -39,11 +37,11 @@ class CoupClient(Client):
                     self.send(message)
                     
         except KeyboardInterrupt:
-            self.printv(blue("Keyboard interrupt detected, closing connection."))
+            logger.info("Keyboard interrupt detected, closing connection.")
         except NotImplementedError:
-            self.printv(yellow("Method not implemented yet!"))
+            logger.warning("Method not implemented yet!")
         except Exception as e:
-            self.printv(red(f"Error in sender: {e}"))
+            logger.error(f"Error in sender: {e}")
         self.signal = False
 
     def receiver(self, message: str):
@@ -55,20 +53,20 @@ class CoupClient(Client):
                 self.signal = False
         
         except SyntaxError:
-            self.printv(yellow(f"Invalid message format for message: \"{message}\""))
+            logger.warning(f"Invalid message format for message: \"{message}\"")
             
         except NotImplementedError:
-            self.printv(yellow("Method not implemented yet!"))
+            logger.warning("Method not implemented yet!")
             self.signal = False
         except Exception as e:
-            self.printv(red(f"Error in receiver: {e}"))
+            logger.error(f"Error in receiver: {e}")
             self.signal = False
 
 
 def main():
     # Get host and port
     if DEFAULT_ADDR:
-        print("Using default address for messages.")
+        logger.info("Using default address for messages.")
         host = "localhost"
         port = 12345
     else:

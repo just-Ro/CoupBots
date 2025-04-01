@@ -2,19 +2,17 @@ from .game.core import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHA
 from .game.core import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
 from terminal.terminal import Terminal
 from utils.colored_text import red, green, yellow, blue
-from utils.verbose import Verbose
 import queue
+from loguru import logger
 
 CHECKOUT_TIMEOUT = 0.5
 
-class Player(Verbose):
+class Player:
     """
     Abstract class for a player in the game.
     """
     
     def __init__(self):
-        self.verbose = True
-        self.ui = False
         self.is_root = False
         
         # Create a queue to send messages
@@ -33,7 +31,7 @@ class Player(Verbose):
         try:
             # Check if the terminal thread finished
             if not self.term.signal:
-                self.printv("Terminal closed.")
+                logger.info("Terminal closed.")
                 raise KeyboardInterrupt
             
             return self.checkout.get(timeout=CHECKOUT_TIMEOUT)
@@ -66,5 +64,5 @@ class Human(Player):
         self.checkout.put("HELLO")
         
     def receive(self, message: str) -> int:
-        self.printui(message)
+        print(message)
         return 0

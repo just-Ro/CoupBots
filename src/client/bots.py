@@ -1,10 +1,11 @@
 from proto.game_proto import game_proto, GameMessage
 from proto.game_proto import ACT, OK, CHAL, BLOCK, SHOW, LOSE, COINS, DECK, CHOOSE, KEEP, HELLO, PLAYER, START, READY, TURN, EXIT, ILLEGAL
-from .game.state_machine import State, SubState, PlayerState, Tag, PlayerSim
+from .game.state_machine import PlayerState, Tag, PlayerSim
 from .game.core import *
 from .player import Player
 from utils.colored_text import red, green, yellow, blue
 import random
+from loguru import logger
 
 
 
@@ -61,33 +62,33 @@ class TestBot(Player, PlayerSim):
 
     def receive(self, message: str) -> int:
         try:
-            self.printv(green("RECV - " + str(message)))
+            logger.success("RECV - " + str(message))
             m = GameMessage(message)
             self.pre_update_state(m)
             if self.state == PlayerState.IDLE:
                 pass
             elif self.state == PlayerState.END:
-                self.printv(blue("Game Over, terminating bot."))
+                logger.info("Game Over, terminating bot.")
                 return 1
             else:
-                # self.printv(f"State: {self.state}")
-                self.printv(str(self.possible_messages))
+                # logger.debug(f"State: {self.state}")
+                logger.debug(str(self.possible_messages))
                 self.choose_message()
                 self.post_update_state(self.msg)
                 self.send_message(self.msg)
                 self.rcv_msg = m
-                self.printv(blue("SEND - " + str(self.msg)))
+                logger.success("SEND - " + str(self.msg))
         except IndexError:
-            self.printv(red(f"No possible messages."))
+            logger.error(f"No possible messages.")
         except Exception as e:
-            self.printv(red(f"Error in receive: " + str(e)))
+            logger.error(f"Error in receive: " + str(e))
         return 0
 
     def pre_update_state(self, message: GameMessage):
                         
         if message.command == EXIT:
             self.set_state(PlayerState.END)
-            self.printv(f"Received EXIT message.")
+            logger.info(f"Received EXIT message.")
         
         elif not self.alive:
             if self.terminate_after_death:
@@ -97,19 +98,19 @@ class TestBot(Player, PlayerSim):
         
         elif message.command == HELLO:
             self.set_state(PlayerState.IDLE)
-            self.printv(yellow(f"Received unexpected message: HELLO"))
+            logger.warning(f"Received unexpected message: HELLO")
         
         elif message.command == READY:
             self.set_state(PlayerState.IDLE)
-            self.printv(yellow(f"Received unexpected message: READY"))
+            logger.warning(f"Received unexpected message: READY")
         
         elif message.command == OK:
             self.set_state(PlayerState.IDLE)
-            self.printv(yellow(f"Received unexpected message: OK"))
+            logger.warning(f"Received unexpected message: OK")
         
         elif message.command == KEEP:
             self.set_state(PlayerState.IDLE)
-            self.printv(yellow(f"Received unexpected message: KEEP"))
+            logger.warning(f"Received unexpected message: KEEP")
         
         elif message.command == ACT:
             if message.action == INCOME:
@@ -137,7 +138,7 @@ class TestBot(Player, PlayerSim):
                     self.set_state(PlayerState.R_COUP)
             else:
                 self.set_state(PlayerState.IDLE)
-                self.printv(red(f"Invalid action: {message.action}"))
+                logger.error(f"Invalid action: {message.action}")
                 
         elif message.command == BLOCK:
             self.tag = Tag.T_NONE
@@ -153,7 +154,7 @@ class TestBot(Player, PlayerSim):
                     self.set_state(PlayerState.R_BLOCK_STEAL_B)
                 else:
                     self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Invalid action: {self.msg.action}"))
+                    logger.error(f"Invalid action: {self.msg.action}")
             else: 
                 if self.rcv_msg.action == FOREIGN_AID:
                     self.set_state(PlayerState.R_BLOCK_FAID)
@@ -165,11 +166,11 @@ class TestBot(Player, PlayerSim):
                     self.set_state(PlayerState.R_BLOCK_STEAL_B)
                 else:
                     self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Invalid action: {self.rcv_msg.action}"))
+                    logger.error(f"Invalid action: {self.rcv_msg.action}")
                 
         elif message.command == CHAL:
             self.tag = Tag.T_NONE
-            self.printv(f"Deck: {self.deck}")
+            logger.debug(f"Deck: {self.deck}")
 
             if self.turn:
                 if self.rcv_msg.command == BLOCK:
@@ -183,7 +184,7 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_E)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
                 elif self.msg.command == ACT:
                     if self.msg.action == ASSASSINATE:
                         self.tag = Tag.T_CHALLENGED
@@ -199,10 +200,10 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_MY_D)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
+                        logger.error(f"Challenging a non-challengeable action: {str(self.msg)}")
                 else:
                     self.set_state(PlayerState.IDLE)
-                    self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
+                    logger.error(f"Challenging a non-challengeable action: {str(self.msg)}")
             else:
                 if self.msg.command == BLOCK:
                     if self.msg.card1 == AMBASSADOR:
@@ -219,7 +220,7 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_MY_E)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        self.printv(red(f"Challenging a non-challengeable action: {str(self.msg)}"))
+                        logger.error(f"Challenging a non-challengeable action: {str(self.msg)}")
                 
                 elif self.rcv_msg.command == BLOCK:
                     if self.rcv_msg.card1 == AMBASSADOR:
@@ -232,7 +233,7 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_E)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
                 
                 elif self.rcv_msg.command == ACT:
                     if self.rcv_msg.action == ASSASSINATE:
@@ -245,7 +246,7 @@ class TestBot(Player, PlayerSim):
                         self.set_state(PlayerState.R_CHAL_D)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        self.printv(red(f"Challenging a non-challengeable action: {str(self.rcv_msg)}"))
+                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
             
         elif message.command == SHOW:
             self.set_state(PlayerState.R_SHOW)
@@ -278,7 +279,7 @@ class TestBot(Player, PlayerSim):
         elif message.command == CHOOSE:
             if message.card1 is None or message.card2 is None:
                 self.set_state(PlayerState.IDLE)
-                self.printv(red(f"Invalid CHOOSE message: {message}"))
+                logger.error(f"Invalid CHOOSE message: {message}")
             else:
                 self.exchange_cards = [message.card1, message.card2]
                 self.set_state(PlayerState.R_CHOOSE)
@@ -305,14 +306,14 @@ class TestBot(Player, PlayerSim):
    
         elif message.command == ILLEGAL:
             # keep in the same state
-            self.printv(yellow(f"Received ILLEGAL message."))
+            logger.warning(f"Received ILLEGAL message.")
             for msg in self.possible_messages:
                 if msg == str(self.msg):
                     self.possible_messages.remove(msg)
             
         else:
             self.set_state(PlayerState.IDLE)
-            self.printv(red(f"Invalid command: {message.command}"))
+            logger.error(f"Invalid command: {message.command}")
 
     def post_update_state(self, message: GameMessage):      
         if message.command == CHAL:
@@ -327,9 +328,9 @@ class TestBot(Player, PlayerSim):
                     self.deck = [message.card1, message.card2]
                 else:
                     self.deck = [message.card1]
-                self.printv(f"New deck: {self.deck}")
+                logger.debug(f"New deck: {self.deck}")
             else:
-                self.printv(red(f"Invalid message: {message}"))
+                logger.error(f"Invalid message: {message}")
         
         if not self.alive:
             self.set_state(PlayerState.END)
