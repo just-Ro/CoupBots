@@ -1,5 +1,5 @@
 from client.coup_client import CoupClient
-from client.player import Human
+from client.human import Human
 from loguru import logger
 import sys
 logger.remove()  # Remove default logger

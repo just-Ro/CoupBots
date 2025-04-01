@@ -1,7 +1,6 @@
 import socket
 import threading
 import sys
-from utils.colored_text import red, green, yellow, blue
 from loguru import logger
 
 
@@ -38,7 +37,7 @@ class Client:
             message {str} -- message that will be printed
         """
 
-        print(blue(message))
+        print(message)
 
     # -- Wrappers --
 

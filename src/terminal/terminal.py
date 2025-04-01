@@ -1,13 +1,13 @@
 import threading
 import queue
-from utils.colored_text import red, green, blue, yellow
+from loguru import logger
 
 
 class Terminal(threading.Thread):
     def __init__(self, fifo: queue.SimpleQueue, prompt = ""):
         threading.Thread.__init__(self)
         self.daemon = True  # If this is the last active thread, it exits silently
-        self.signal = True
+        self.signal = fifo is not None  # If fifo is None, the thread will not run
         self.fifo = fifo
         self.prompt = prompt
         self.start()
@@ -20,7 +20,7 @@ class Terminal(threading.Thread):
         except (KeyboardInterrupt, EOFError):
             self.signal = False
         except:
-            print(red(f"Error in Terminal"))
+            logger.error(f"Error in Terminal")
             self.signal = False
         
         

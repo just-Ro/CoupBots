@@ -1,5 +1,6 @@
 from .client import Client
-from .player import Player, Human
+from .player import Player
+from .human import Human
 from proto.network_proto import SINGLE, EXCEPT, ALL
 from proto.network_proto import network_proto, NetworkMessage
 from loguru import logger

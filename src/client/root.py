@@ -51,6 +51,7 @@ class Root(Player):
             # TODO: let other players know that this player disconnected
             logger.info(f"Player {net.addr} disconnected.")
             self.players[net.addr].alive = False
+            self.players.pop(net.addr, None)
             if self.game_over() and self.sm.current_state.name != "IDLE":
                 if self.sm.current_state.name == "END":
                     if sum([player.alive for player in self.players.values()]) == 0:
@@ -856,41 +857,3 @@ class RootStateMachine(StateMachine):
         for to_state, condition in transitions.items():
             self.add_transition(name, to_state, condition)
             
-            
-class TestRoot(Player):
-    def __init__(self):
-        super().__init__()
-        self.verbose = True
-        self.is_root = True
-        self.players: dict[str, PlayerSim] = {}
-        self.deck = [*CHARACTERS, *CHARACTERS, *CHARACTERS]
-    
-    def receive(self, net_msg: str):
-        try:
-            net = NetworkMessage(net_msg)
-            if net.msg is not None and net.msg == DISCONNECT:
-                if net.addr is not None:
-                    logger.info(f"ID{int(net.addr):02d} disconnected.")
-                    return
-            if net.msg is not None:
-                game = GameMessage(net.msg)
-        except SyntaxError:
-            logger.warning(f"Invalid message format.")
-            return
-        if net.addr is None:
-            logger.warning(f"ID?? -> {net.msg}")
-            return
-        logger.info(f"ID{int(net.addr):02d} -> {net.msg}")
-        
-    def send_single(self, game_msg: str, dest: str):
-        logger.info(f"ID{int(dest):02d} <- {game_msg}")
-        self.checkout.put(network_proto.SINGLE(dest, game_msg))
-    
-    def send_all(self, game_msg: str):
-        logger.info(f"ALL <- {game_msg}")
-        self.checkout.put(network_proto.ALL(game_msg))
-    
-    def send_except(self, game_msg: str, exclude: str):
-        logger.info(f"NOT ID{exclude} <- {game_msg}")
-        self.checkout.put(network_proto.EXCEPT(exclude, game_msg))
-        

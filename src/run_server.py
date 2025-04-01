@@ -1,6 +1,6 @@
 from server.coup_server import CoupServer
 from client.coup_client import CoupClient
-from client.root import TestRoot, Root
+from client.root import Root
 from loguru import logger
 import sys
 logger.remove()  # Remove default logger
@@ -26,8 +26,7 @@ if __name__ == "__main__":
     server = CoupServer(host, port)
 
     # Create client
-    # player = TestRoot() # Use for manual testing
-    player = Root() # Still unfinished
+    player = Root()
     client = CoupClient(host, port, player)
 
     try:
