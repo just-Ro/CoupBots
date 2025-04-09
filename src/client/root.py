@@ -470,7 +470,7 @@ class Root(Player):
     def take_card(self, deck: list[str]):
         if deck:  # Check if deck is not empty
             return deck.pop(random.randint(0, len(deck) - 1))
-        return None  # Return None if deck is empty
+        raise IndexError("Deck is empty, cannot take card.")
     
     def next_player_turn(self):
         players_cycle = itertools.cycle(self.players.keys())

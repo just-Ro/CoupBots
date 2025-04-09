@@ -16,12 +16,11 @@ class Player:
     
     def __init__(self, terminal: Terminal | None = None):
         self.is_root = False
-        
-        # Create a queue to send messages
+        """Flag for whether the player is the root player. \n\n- True: The player is the root player. \n- False: The player is not the root player."""
         self.checkout = queue.SimpleQueue()
-        
-        # Create a terminal to write messages manually
+        """Queue used to send messages to the server. The queue is thread-safe and can be used by multiple threads."""
         self.term = Terminal(self.checkout) if terminal is None else terminal
+        """Terminal used to write messages manually."""
     
     def sender(self):
         """
@@ -49,6 +48,8 @@ class Player:
         Arguments:
             message {_str_} -- request/informative message
 
+        Returns:
+            int -- 1 if the player wants to terminate, 0 otherwise.
         """
         raise NotImplementedError
         return 0
@@ -58,15 +59,37 @@ class InformedPlayer(Player, PlayerSim):
     """
     Player class that is informed of the game state and can send messages to the game.
     This class is used to simulate a player in the game.
+    
+    Attributes:
+        alive (bool): Flag for whether the player is alive or not.
+        checkout (SimpleQueue): Queue used to send messages to the server. The queue is thread-safe and can be used by multiple threads.
+        coins (int): Number of coins the player has.
+        deck (list[str]): List of cards in the player's deck.
+        exchange_cards (list[str]): List of cards to exchange with the deck.
+        id (str): Player ID.
+        is_root (bool): Flag for whether the player is the root player or not.
+        msg (GameMessage): Message to be sent to the server.
+        players (dict[str, PlayerSim]): Dictionary of players in the game.
+        possible_messages (list[str]): List of possible messages the player can send.
+        rcv_msg (GameMessage): Last received message.
+        ready (bool): Flag for whether the player is ready or not.
+        replied (bool): Flag for whether the player has replied to the last message or not.
+        state (PlayerState): State of the player.
+        tag (Tag): Tag for the player. Used to identify the player in the game.
+        term (Terminal): Terminal used to write messages manually.
+        terminate_after_death (bool): Flag for whether the player should terminate after its own death.
+        turn (bool): Flag for whether it is the player's turn or not.
     """
 
     def __init__(self, terminal: Terminal | None = None):
         Player.__init__(self, terminal)
         PlayerSim.__init__(self, '0', {})
+        self.terminate_after_death = False
+        """Flag for whether the player should terminate after its own death. \n\n- True: The player will terminate when dead. \n- False: The player will continue to receive messages without replying."""
         self.rcv_msg = GameMessage(OK)
+        """Last received message."""
         self.msg = GameMessage(HELLO)
         self.send_message(self.msg)
-        self.terminate_after_death = False
 
     def receive(self, message: str) -> int:
         try:
@@ -79,8 +102,8 @@ class InformedPlayer(Player, PlayerSim):
                 logger.info("Game Over, terminating bot.")
                 return 1
             else:
-                # logger.debug(f"State: {self.state}")
-                logger.debug(str(self.possible_messages))
+                logger.debug(f"State: {self.state}")
+                logger.debug(f"Possible messages: {self.possible_messages}")
                 self.choose_message()
                 self.post_update_state(self.msg)
                 self.send_message(self.msg)
@@ -92,7 +115,13 @@ class InformedPlayer(Player, PlayerSim):
             logger.error(f"Error in receive: " + str(e))
         return 0
 
-    def pre_update_state(self, message: GameMessage):
+    def pre_update_state(self, message: GameMessage) -> None:
+        """
+        Updates the state of the player based on the received message before any action is taken. 
+
+        Arguments:
+            message {GameMessage} -- received message
+        """
                         
         if message.command == EXIT:
             self.set_state(PlayerState.END)
@@ -327,10 +356,20 @@ class InformedPlayer(Player, PlayerSim):
             self.set_state(PlayerState.IDLE)
             logger.error(f"Invalid command: {message.command}")
     
-    def choose_message(self):
+    def choose_message(self) -> None:
+        """
+        Called when the player is in a state where it can choose a message to send. 
+        Reads _self.possible_messages_, chooses one of them and sets _self.msg_ to it.
+        """
         raise NotImplementedError("choose_message() not implemented.")
     
-    def post_update_state(self, message: GameMessage):      
+    def post_update_state(self, message: GameMessage) -> None:
+        """
+        Updates the state of the player based on the received message and the chosen reply.
+
+        Arguments:
+            message {GameMessage} -- chosen message to be sent
+        """
         if message.command == CHAL:
             self.tag = Tag.T_CHALLENGING
             
@@ -350,7 +389,14 @@ class InformedPlayer(Player, PlayerSim):
         if not self.alive:
             self.set_state(PlayerState.END)
     
-    def send_message(self, message: GameMessage):
+    def send_message(self, message: GameMessage) -> None:
+        """
+        Sends a message to the server. The message is put in the checkout queue.
+        This method is called when the player is in a state where it can send a message.
+
+        Arguments:
+            message {GameMessage} -- message to be sent
+        """
         self.msg = message
         self.checkout.put(str(self.msg))
  

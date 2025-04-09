@@ -4,6 +4,9 @@ from loguru import logger
 
 
 class Terminal(threading.Thread):
+    """
+    This thread will run in the background and listen for user input.
+    """
     def __init__(self, fifo: queue.SimpleQueue, prompt = ""):
         threading.Thread.__init__(self)
         self.daemon = True  # If this is the last active thread, it exits silently

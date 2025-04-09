@@ -34,7 +34,6 @@ class StateMachine:
     Represents a state machine that manages states and transitions between them.
     
     The state machine has a current state and a dictionary of states and transitions.
-    
     The state machine can add states, add transitions between states, set the current state, and update the state machine.
     """
     
@@ -53,7 +52,7 @@ class StateMachine:
 
     def add_state(self, state: State) -> None:
         """
-        add_state method for StateMachine class.
+        Adds a state to the state machine.
 
         Arguments:
             state {State} -- The state to add to the state machine.
@@ -63,7 +62,7 @@ class StateMachine:
 
     def add_transition(self, from_state: str, to_state: str, condition) -> None:
         """
-        add_transition method for StateMachine class.
+        Adds a transition between two states in the state machine.
 
         Arguments:
             from_state {str} -- starting state
@@ -76,6 +75,16 @@ class StateMachine:
         self.transitions[from_state].append((to_state, condition))
 
     def set_state(self, state_name: str) -> None:
+        """
+        Sets the current state of the state machine to a new state.
+        This method also executes the exit action of the current state and the entry action of the new state.
+
+        Arguments:
+            state_name {str} -- The name of the new state to set as the current state.
+
+        Raises:
+            ValueError: If the state name does not exist in the state machine.
+        """
         if state_name in self.states:
             self.previous_state = self.current_state
             self.current_state.exit_action()
@@ -86,9 +95,7 @@ class StateMachine:
 
     def update(self) -> None:
         """
-        update method for StateMachine class. 
-        
-        Changes the state of the state machine based on the transitions defined.
+        Updates the state of the state machine based on the transitions defined.
         """
         if self.current_state.name in self.transitions:
             for (next_state, condition) in self.transitions[self.current_state.name]:

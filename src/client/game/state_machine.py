@@ -55,29 +55,42 @@ class PlayerSim:
     """
 
     def __init__(self, id: str, players: dict[str, "PlayerSim"]):
-        self.id = id
-        self.players = players
+        self.id: str = id
+        """Player ID. Represents the player name, which uniquely identifies it in the game."""
+        self.players: dict[str, "PlayerSim"] = players
+        """List of players in the game."""
         self.coins: int = 0
+        """Number of coins the player has."""
         self.deck: list[str] = []
-        self.exchange_cards = []
-        self.ready = False
-        self.alive = True
-        self.turn = False
-        self.tag = Tag.T_NONE
-        self.state = PlayerState.IDLE
-        self.replied = True
-        self.possible_messages = []
-        self.was_announced = False
+        """List of cards the player has."""
+        self.exchange_cards: list[str] = []
+        """List of cards the player was presented with during an exchange."""
+        self.ready: bool = False
+        """Flag for whether the player is ready. \n\n- True: ready.\n- False: not ready."""
+        self.alive: bool = True
+        """Flag for whether the player is alive. \n\n- True: alive.\n- False: dead."""
+        self.turn: bool = False
+        """Flag for whether the player is taking their turn. \n\n- True: player's turn.\n- False: not player's turn."""
+        self.replied: bool = True
+        """Flag for whether the player has replied. \n\n- True: replied.\n- False: not replied."""
+        self.was_announced: bool = False
+        """Flag for whether the player was announced to other players in the game. \n\n- True: announced.\n- False: not announced."""
+        self.tag: Tag = Tag.T_NONE
+        """Tag for the player. Used inside the player state machine."""
+        self.state: PlayerState = PlayerState.IDLE
+        """Current state of the player."""
+        self.possible_messages: list[str] = []
+        """List of possible messages to send."""
         self.msg: GameMessage = GameMessage("OK")
+        """Message to send."""
     
     def set_state(self, state: PlayerState):
+        """Sets the state of the player and generates possible messages for that state."""
         self.state = state
         self.possible_messages = self.generate_responses()
     
     def generate_responses(self):
-        """
-        Generates a list of possible messages to send.
-        """
+        """Generates a list of possible messages to send."""
         messages = []
 
         # If the player is dead or can't reply, they can't send any messages
