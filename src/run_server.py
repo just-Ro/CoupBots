@@ -3,11 +3,21 @@ from client.coup_client import CoupClient
 from client.root import Root
 from loguru import logger
 import sys
-logger.remove()  # Remove default logger
+
+# Remove default logger
+logger.remove()
+
+# Configure Terminal logging
 logger.add(sys.stderr, level="SUCCESS", format="<level>{message}</level>", colorize=False, filter=lambda record: record['level'].name == 'SUCCESS')
 logger.add(sys.stderr, level="WARNING", format="<level>{message}</level>", colorize=True)
+
+# Configure File logging
 open("../log/server.log", "w").close()  # Clear log file
 logger.add(f"../log/server.log", level="TRACE", format="<green>{time: YYYY:MM:DD at HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
+
+# Configure Short game summary logging
+open("../log/game_summary.log", "w").close()  # Clear log file
+logger.add(f"../log/game_summary.log", level="SUCCESS", format="<level>{message}</level>", filter=lambda record: "Player" in record["message"] and "OK" not in record["message"])
 
 DEFAULT_ADDR = True  # Use default address for messages
 

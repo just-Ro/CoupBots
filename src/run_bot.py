@@ -10,10 +10,10 @@ DEFAULT_ADDR = True  # Use default address for messages
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        bot_number = sys.argv[1]
+        bot_id = sys.argv[1]
         # clear log file if it exists
-        open(f"../log/bot{bot_number}.log", "w").close()
-        logger.add(f"../log/bot{bot_number}.log", 
+        open(f"../log/bot_{bot_id}.log", "w").close()
+        logger.add(f"../log/bot_{bot_id}.log", 
                    level="TRACE", 
                    format="<green>{time: HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
     
