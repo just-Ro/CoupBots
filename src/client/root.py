@@ -553,7 +553,10 @@ class Root(Player):
         return False
     
 ### Helper methods
-            
+
+    def broadcast_dead(self, exclude: str):
+        self._send_except(game_proto.DEAD(exclude), exclude)
+        
     def broadcast_lose(self, target: PlayerSim):
         if target is not None:
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
@@ -561,6 +564,7 @@ class Root(Player):
             self.send_single_and_update(game_proto.DECK(*target.deck), target.id, PlayerState.R_DECK)
             if len(target.deck) == 0:
                 target.alive = False
+                self.broadcast_dead(target.id)
     
     def _send_single(self, game_msg: str, dest: str):
         logger.info(f"Sent to player {dest}: {game_msg}")

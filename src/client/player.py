@@ -1,5 +1,5 @@
 from proto.game_proto import game_proto, GameMessage
-from proto.game_proto import ACT, OK, CHAL, BLOCK, SHOW, LOSE, COINS, DECK, CHOOSE, KEEP, HELLO, PLAYER, START, READY, TURN, EXIT, ILLEGAL
+from proto.game_proto import ACT, OK, CHAL, BLOCK, SHOW, LOSE, COINS, DECK, CHOOSE, KEEP, HELLO, PLAYER, START, READY, TURN, EXIT, DEAD, ILLEGAL
 from .game.state_machine import PlayerState, Tag, PlayerSim
 from .game.core import INCOME, FOREIGN_AID, COUP, TAX, ASSASSINATE, STEAL, EXCHANGE, ACTIONS, TARGET_ACTIONS  # Actions
 from .game.core import ASSASSIN, AMBASSADOR, CAPTAIN, DUKE, CONTESSA, CHARACTERS  # Characters
@@ -56,7 +56,8 @@ class Player:
 
 class InformedPlayer(Player, PlayerSim):
     """
-    TestBot player class.
+    Player class that is informed of the game state and can send messages to the game.
+    This class is used to simulate a player in the game.
     """
 
     def __init__(self, terminal: Terminal | None = None):
@@ -72,7 +73,7 @@ class InformedPlayer(Player, PlayerSim):
             logger.success("RECV - " + str(message))
             m = GameMessage(message)
             self.pre_update_state(m)
-            if self.state == PlayerState.IDLE:
+            if self.state == PlayerState.IDLE or m.command == DEAD:
                 pass
             elif self.state == PlayerState.END:
                 logger.info("Game Over, terminating bot.")
@@ -96,6 +97,10 @@ class InformedPlayer(Player, PlayerSim):
         if message.command == EXIT:
             self.set_state(PlayerState.END)
             logger.info(f"Received EXIT message.")
+        
+        elif message.command == DEAD:
+            # Don't change state
+            self.players[message.ID1].alive = False
         
         elif not self.alive:
             if self.terminate_after_death:

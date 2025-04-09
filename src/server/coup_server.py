@@ -17,7 +17,7 @@ class CoupServer(Server):
         """Route a message based on its format."""
         net_msg_str = net_msg.decode("utf-8")
 
-        logger.info(f"Received message from ID {sender.id}: {net_msg_str.strip("\n")}")
+        logger.info(f"Received message from ID {sender.id}: {net_msg_str.replace("\n", "\\n")}")
         
         # If the message is not addressed, address it to root
         try:
