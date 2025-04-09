@@ -48,7 +48,6 @@ class Root(Player):
         # Check for disconnection message
         if net.msg == DISCONNECT:
             # Remove player from the game
-            # TODO: let other players know that this player disconnected
             logger.info(f"Player {net.addr} disconnected.")
             self.players[net.addr].alive = False
             self.players.pop(net.addr, None)
