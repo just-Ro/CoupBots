@@ -5,7 +5,7 @@ from loguru import logger
 
 CLIENT_TIMEOUT = 1.0  # Timeout for client socket
 SERVER_TIMEOUT = 1.0  # Timeout for server socket
-MAX_CONNECTIONS = 5  # Maximum number of connections
+MAX_CONNECTIONS = 6  # Maximum number of connections
 DEFAULT_ADDR = True  # Use default address for messages
 
 
