@@ -18,7 +18,7 @@ class Root(Player):
     This player sends and receives addressed messages, e.g. orig@message
     """
 
-    def __init__(self):
+    def __init__(self, mode: str = "manual"):
         super().__init__()
         self.is_root = True
         self.players: dict[str, PlayerSim] = {}
@@ -29,6 +29,7 @@ class Root(Player):
         self.turn_blocker = None
         self.blocker_challenger = None
         self.turn_msg = None
+        self.mode = mode
     
     def receive(self, net_msg: str) -> int:
         try:
@@ -74,7 +75,7 @@ class Root(Player):
         
         # Create player state
         if game.command == HELLO:
-            if net.addr in self.players.keys() or len(self.players) == MAX_PLAYERS or self.sm.current_state.name != "IDLE":
+            if net.addr in self.players.keys() or len(self.players) == MAX_PLAYERS or self.sm.current_state.name not in ["IDLE", "START"]:
                 # Player already exists or game is full
                 self.send_illegal(net.addr)
             else:
@@ -90,8 +91,10 @@ class Root(Player):
             self.sm.update()
             logger.debug(f"Current state: {self.sm.current_state.name}")
 
-        self.debug_player_states()
-        self.debug_player_possible_messages()
+        # self.debug_player_states()
+        # self.debug_player_tags()
+        # self.debug_player_possible_messages()
+        self.debug_players()
         return 0
     
 ### Player States
@@ -101,7 +104,7 @@ class Root(Player):
         if player is None:
             return
         
-        if str(m) not in player.possible_messages or self.sm.current_state.name != "IDLE" and player.replied:
+        if str(m) not in player.possible_messages or self.sm.current_state.name not in ["IDLE", "START"] and player.replied:
             self.send_illegal(orig)
             return
         player.replied = True
@@ -109,7 +112,7 @@ class Root(Player):
         # Store the message
         player.msg = m
 
-        if self.sm.current_state.name == "IDLE":  # Initial state
+        if self.sm.current_state.name in ["IDLE", "START"]:  # Initial state
             if m.command == READY:
                 player.ready = True
             if player.state == PlayerState.R_PLAYER:
@@ -122,26 +125,43 @@ class Root(Player):
                 if self.turn_blocker is None:
                     player.tag = Tag.T_BLOCKING
                     self.turn_blocker = player
+                    # give priority to block instead of chal
+                    for p in self.players.values():
+                        if p.id != player.id:
+                            p.tag = Tag.T_NONE
+                else:
+                    player.tag = Tag.T_NONE
             
             elif m.command == CHAL:
-                if self.turn_challenger is None:
+                # give priority to block instead of chal
+                if self.turn_challenger is None and self.turn_blocker is None:
                     player.tag = Tag.T_CHALLENGING
                     self.turn_challenger = player
+                else:
+                    player.tag = Tag.T_NONE
             
         elif self.sm.current_state.name.endswith("BLOCK"):   # Waiting for players to reply to the block
             if m.command == CHAL:
                 if self.blocker_challenger is None:
                     player.tag = Tag.T_CHALLENGING
                     self.blocker_challenger = player
-            
+                else:
+                    player.tag = Tag.T_NONE
+                                
         elif self.sm.current_state.name == "EXCHANGE_CHOOSE":
             if player.state == PlayerState.R_CHOOSE:
-                player.exchange_cards = []
+                hand = player.deck + player.exchange_cards
                 if m.card1 is not None:
                     if m.card2 is not None:
                         player.deck = [m.card1, m.card2]
+                        hand.remove(m.card1)
+                        hand.remove(m.card2)
                     else:
                         player.deck = [m.card1]
+                        hand.remove(m.card1)
+                    for card in hand:
+                        self.put_card(self.deck, card)
+                    player.exchange_cards = []
                 else:
                     logger.error("No cards to exchange.")
                     return
@@ -183,7 +203,29 @@ class Root(Player):
             if player.alive:
                 logger.debug(f"ID{player.id}: {player.possible_messages}")
 
+    def debug_player_tags(self):
+        logger.debug("Player tags:")
+        for player in self.players.values():
+            if player.alive:
+                logger.debug(f"ID{player.id}: {player.tag}")
+
+    def debug_players(self):
+        string: str = ""
+        for player in self.players.values():
+            if player.alive:
+                string += (f"\nPlayer {player.id}:\n\
+    State: {player.state}\n\
+    Tag: {player.tag}\n\
+    Deck: {player.deck}\n\
+    Coins: {player.coins}\n\
+    Msg: {player.msg}\n\
+    Possible messages: {player.possible_messages}\n")
+        logger.debug(string)
+
 ### State Machine Conditions
+    
+    def auto_start(self):
+        return self.mode == "auto" and len(self.players) == MAX_PLAYERS
     
     def all_players_ready(self):
         return all([player.alive and player.ready for player in self.players.values()])
@@ -233,10 +275,16 @@ class Root(Player):
     def block_is_bluff(self):
         return self.turn_blocker is not None and self.turn_blocker.msg.command == LOSE
     
+    def target_dead(self):
+        return self.turn_msg is not None and self.turn_msg.ID2 is not None and self.players[self.turn_msg.ID2].alive == False
+    
     def game_over(self):
         return sum([player.alive for player in self.players.values()]) <= 1
     
 ### State Machine Actions
+    
+    def send_start(self):
+        self._send_all(game_proto.START())
     
     def setup_decks(self):
         for player in self.players.values():
@@ -272,6 +320,8 @@ class Root(Player):
         self.blocker_challenger = None
         if self.turn_id is not None:
             self.turn_msg = self.players[self.turn_id].msg
+        for player in self.players.values():
+            player.tag = Tag.T_NONE
 
     def send_income(self):
         if self.turn_id is not None:
@@ -292,17 +342,17 @@ class Root(Player):
     def send_assassinate(self):
         if self.turn_id is not None and self.players[self.turn_id].msg.ID2 is not None:
             self.send_except_and_update(str(self.turn_msg), self.turn_id, PlayerState.R_ASSASS)
-            self.players[self.players[self.turn_id].msg.ID2].set_state(PlayerState.R_ASSASS_ME)
+            self.players[str(self.players[self.turn_id].msg.ID2)].set_state(PlayerState.R_ASSASS_ME)
         
     def send_steal(self):
         if self.turn_id is not None and self.players[self.turn_id].msg.ID2 is not None:
             self.send_except_and_update(str(self.turn_msg), self.turn_id, PlayerState.R_STEAL)
-            self.players[self.players[self.turn_id].msg.ID2].set_state(PlayerState.R_STEAL_ME)
+            self.players[str(self.players[self.turn_id].msg.ID2)].set_state(PlayerState.R_STEAL_ME)
     
     def send_coup(self):
         if self.turn_id is not None and self.players[self.turn_id].msg.ID2 is not None:
             self.send_except_and_update(str(self.turn_msg), self.turn_id, PlayerState.R_COUP)
-            self.players[self.players[self.turn_id].msg.ID2].set_state(PlayerState.R_COUP_ME)
+            self.players[str(self.players[self.turn_id].msg.ID2)].set_state(PlayerState.R_COUP_ME)
     
     def income_coins(self):
         if self.turn_id is not None:
@@ -422,12 +472,12 @@ class Root(Player):
     def turn_show(self):
         if self.turn_id is not None:
             self.send_except_and_update(str(self.players[self.turn_id].msg), self.turn_id, PlayerState.R_SHOW)
-            self.replace_player_card(self.players[self.turn_id], self.players[self.turn_id].msg.card1)
+            self.replace_player_card(self.players[self.turn_id], str(self.players[self.turn_id].msg.card1))
     
     def blocker_show(self):
         if self.turn_blocker is not None:
             self.send_except_and_update(str(self.turn_blocker.msg), self.turn_blocker.id, PlayerState.R_SHOW)
-            self.replace_player_card(self.turn_blocker, self.turn_blocker.msg.card1)
+            self.replace_player_card(self.turn_blocker, str(self.turn_blocker.msg.card1))
     
     def turn_replace_deck(self):
         if self.turn_id is not None:
@@ -523,7 +573,6 @@ class Root(Player):
                 turn.exchange_cards = [self.take_card(self.deck)]
             else:
                 turn.exchange_cards = [self.take_card(self.deck), self.take_card(self.deck)]
-            print(self.players[turn.id].exchange_cards)
             self.send_single_and_update(game_proto.CHOOSE(*turn.exchange_cards), turn.id, PlayerState.R_CHOOSE)
             
         elif msg.action == ASSASSINATE:
@@ -559,7 +608,7 @@ class Root(Player):
     def broadcast_lose(self, target: PlayerSim):
         if target is not None:
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
-            target.deck.remove(target.msg.card1)
+            target.deck.remove(str(target.msg.card1))
             self.send_single_and_update(game_proto.DECK(*target.deck), target.id, PlayerState.R_DECK)
             if len(target.deck) == 0:
                 target.alive = False
@@ -601,10 +650,15 @@ class Root(Player):
 
 class RootStateMachine(StateMachine):
     def __init__(self, root: Root):
+        auto = lambda: True
+        
         super().__init__(State("IDLE", entry_action=None))
         self.add_transition("IDLE", "SETUP_DECK", root.all_players_ready)
+        self.add_transition("IDLE", "START", root.auto_start)
         
-        auto = lambda: True
+        self.new_state("START",
+                        entry_action=root.send_start,
+                        transitions={"SETUP_DECK": root.all_players_ready})
         
         self.new_state("SETUP_DECK", 
                         entry_action=root.setup_decks, 
@@ -748,6 +802,7 @@ class RootStateMachine(StateMachine):
         self.new_state("ASSASS_BLOCK_CHAL_BLUFF",
                         entry_action=root.blocker_lose,
                         transitions={"END": root.game_over,
+                                     "ASSASS_COINS": root.target_dead,
                                      "ASSASS_KILL": auto})
         self.new_state("ASSASS_BLOCK_CHAL_FAIL_1",
                         entry_action=root.blocker_show,
@@ -776,7 +831,8 @@ class RootStateMachine(StateMachine):
                                      "ASSASS_CHAL_FAIL_3": auto})
         self.new_state("ASSASS_CHAL_FAIL_3",
                         entry_action=root.turn_replace_deck,
-                        transitions={"ASSASS_KILL": auto})
+                        transitions={"ASSASS_COINS": root.target_dead, 
+                                     "ASSASS_KILL": auto})
         
         # STEAL
         self.new_state("STEAL",

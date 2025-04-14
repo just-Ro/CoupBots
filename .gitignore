@@ -4,3 +4,4 @@ MarkdownIntro.md
 test.py
 notes.txt
 *.log
+log_*

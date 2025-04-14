@@ -15,7 +15,7 @@ if __name__ == "__main__":
         open(f"../log/human_{human_id}.log", "w").close()
         logger.add(f"../log/human_{human_id}.log", 
                    level="TRACE", 
-                   format="<green>{time: HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
+                   format="<green>{time:HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
     
     # Get host and port
     if DEFAULT_ADDR:

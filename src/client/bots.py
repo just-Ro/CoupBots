@@ -67,9 +67,14 @@ class TestBot(InformedPlayer):
         for m in self.possible_messages:
             msgs.append(GameMessage(m))
         for m in msgs:
-            if m.command == ACT and m.action == TAX:
+            if m.command == ACT and m.action == ASSASSINATE:
                 self.msg = m
                 return
-            elif m.command == BLOCK:
+        for m in msgs:
+            if m.command == ACT and m.action == INCOME:
+                self.msg = m
+                return
+        for m in msgs:
+            if m.command == BLOCK and len(self.deck) == 1:
                 self.msg = m
                 return

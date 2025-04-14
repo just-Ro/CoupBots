@@ -44,15 +44,15 @@ Each message sent by a **Client** is always routed to the **Root**. The **Root**
 Each instance must run on a separate terminal, but not necessarily on the same machine. As long as the connection address and port matches the **Server**, **Clients** can connect from different machines.
 
 ## Bot implementation
-To implement a bot, you must edit or duplicate the `CoupBot` class and implement the `receive()` method. This class must be inside the `src/client/bots.py` file. If you choose to duplicate the `CoupBot` class once or more (perhaps to test different bots yourself), remember to import and change the class used by `run_bot.py` to run your desired bot. If you don't do this, the `CoupBot` class will be used by default.
+To implement a bot, you must edit or duplicate the `CoupBot` class and implement the `choose_message()` method. This class must be inside the `src/client/bots.py` file. If you choose to duplicate the `CoupBot` class once or more (perhaps to test different bots yourself), remember to import and change the class used by `run_bot.py` to run your desired bot. If you don't do this, the `CoupBot` class will be used by default.
 
-The `receive()` method will be called whenever the bot receives a new message. Here, the bot can update its state/knowledge with the information from the message and *may or may not* put a reply message on its checkout queue to send to the **Root**, depending on the received message.
+The `choose_message()` method will be called after the bot receives a new message and generates all possible replies for it. Here, the bot can choose a reply from `self.possible_messages` and put it into `self.msg`.
 
 
 ## Message Protocol
 The messages exchanged between the **Root** and the **Clients** are strings with a specific format. 
 
-Some messages start with `command|ID1` where `ID1` is the origin **Client** ID which is a number automatically assigned by the **Server** when first connecting. Messages without any ID are reserved for private communication between the **Root** and each **Client**, which means that these messages will never be broadcasted from one **Client** to another. 
+Some messages start with `command ID1` where `ID1` is the origin **Client** ID which is a number automatically assigned by the **Server** when first connecting. Messages without any ID are reserved for private communication between the **Root** and each **Client**, which means that these messages will never be broadcasted from one **Client** to another. 
 
 Below is the full list of the accepted Protocol messages.
 
@@ -97,11 +97,10 @@ These are all possible messages each **Client** can receive and all possible rep
 | `TURN ID1` | `OK`, `ACT ID1 ACTION ID2` |
 | `EXIT` | None |
 | `DEAD ID1` | None |
-| `ILLEGAL` | ** |
+| `ILLEGAL` | * |
 
-\* The **Client** should reply `OK` if ID1 is not its own ID.
-
-\** If a player receives `ILLEGAL`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. If the player sends 2 illegal messages in a row, the **Root** replies with `EXIT` and the player is kicked from the game.
+\* If a player receives `ILLEGAL`, it means that the previously sent message was either not needed or wrong. The player must reevaluate what to send. 
+<!-- If the player sends 2 illegal messages in a row, the **Root** replies with `EXIT` and the player is kicked from the game. -->
 
 
 ## Game initialization
@@ -129,7 +128,7 @@ To startup the game, there is a sequence of commands that must be used to initia
 18. Player ---> Root: `OK`
 19. Player <--- Root: `TURN|ID`
 
-\* The game can be played with 2-5 players, so these messages are not always sent.
+\* The game can be played with 2-6 players, so these messages are not always sent.
 
 ## Challenge resolution
 ### Scenario 1: P1 challenges P2's action and P2 loses
