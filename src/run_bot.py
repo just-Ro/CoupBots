@@ -3,7 +3,7 @@ from client.bots import CoupBot, TestBot
 from loguru import logger
 import sys
 
-DEFAULT_ADDR = True  # Use default address for messages
+DEFAULT_ADDR = False  # Use default address for messages
 VERBOSE = True
 
 logger.remove()  # Remove default logger

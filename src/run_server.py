@@ -4,7 +4,7 @@ from client.root import Root
 from loguru import logger
 import sys
 
-DEFAULT_ADDR = True  # Use default address for messages
+DEFAULT_ADDR = False  # Use default address for messages
 VERBOSE = True
 
 # Remove default logger

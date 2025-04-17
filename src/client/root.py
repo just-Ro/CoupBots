@@ -839,7 +839,7 @@ class RootStateMachine(StateMachine):
                         entry_action=root.send_steal,
                         transitions={"STEAL_BLOCK": root.turn_has_block,
                                      "STEAL_CHAL": root.turn_has_challenge,
-                                     "STEAL_TAKE": auto})
+                                     "STEAL_RECEIVE": auto})
         self.new_state("STEAL_RECEIVE",
                         entry_action=root.steal_receive_coins,
                         transitions={"STEAL_TAKE": auto})
@@ -862,7 +862,7 @@ class RootStateMachine(StateMachine):
         self.new_state("STEAL_BLOCK_CHAL_BLUFF",
                         entry_action=root.blocker_lose,
                         transitions={"END": root.game_over,
-                                     "STEAL_TAKE": auto})
+                                     "STEAL_RECEIVE": auto})
         self.new_state("STEAL_BLOCK_CHAL_FAIL_1",
                         entry_action=root.blocker_show,
                         transitions={"STEAL_BLOCK_CHAL_FAIL_2": auto})
@@ -890,7 +890,7 @@ class RootStateMachine(StateMachine):
                                      "STEAL_CHAL_FAIL_3": auto})
         self.new_state("STEAL_CHAL_FAIL_3",
                         entry_action=root.turn_replace_deck,
-                        transitions={"STEAL_TAKE": auto})
+                        transitions={"STEAL_RECEIVE": auto})
         
         # COUP
         self.new_state("COUP",

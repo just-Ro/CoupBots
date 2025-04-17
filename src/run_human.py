@@ -6,7 +6,7 @@ logger.remove()  # Remove default logger
 logger.add(sys.stderr, level="SUCCESS", format="<level>{message}</level>", colorize=False, filter=lambda record: record['level'].name == 'SUCCESS')
 logger.add(sys.stderr, level="WARNING", format="<level>{message}</level>", colorize=True)
 
-DEFAULT_ADDR = True  # Use default address for messages
+DEFAULT_ADDR = False  # Use default address for messages
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
