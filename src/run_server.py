@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.12
+
 from server.coup_server import CoupServer
 from client.coup_client import CoupClient
 from client.root import Root

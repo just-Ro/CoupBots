@@ -1,3 +1,5 @@
+#!/usr/bin/env python3.12
+
 from client.coup_client import CoupClient
 from client.bots import CoupBot, TestBot
 from loguru import logger

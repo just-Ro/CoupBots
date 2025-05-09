@@ -129,7 +129,8 @@ class InformedPlayer(Player, PlayerSim):
         
         elif message.command == DEAD:
             # Don't change state
-            self.players[message.ID1].alive = False
+            if message.ID1 is not None:
+                self.players[message.ID1].alive = False
         
         elif not self.alive:
             if self.terminate_after_death:

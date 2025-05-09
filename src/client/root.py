@@ -659,7 +659,6 @@ class RootStateMachine(StateMachine):
         self.new_state("START",
                         entry_action=root.send_start,
                         transitions={"SETUP_DECK": root.all_players_ready})
-        
         self.new_state("SETUP_DECK", 
                         entry_action=root.setup_decks, 
                         transitions={"SETUP_COINS": auto})
