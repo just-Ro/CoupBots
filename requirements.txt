@@ -1,1 +1,2 @@
 loguru>=0.7.3,<0.8.0  # https://github.com/Delgan/loguru
+argparse>=1.4.0,<2.0.0

@@ -2,29 +2,29 @@
 
 import subprocess
 import time
+import argparse
 import sys
 
-SLEEP_TIME = 0.05  # seconds
-TERMINAL_OUTPUT = False
+SLEEP_TIME = 0.5  # seconds
 
-process_calls = ["python run_server.py auto", 
-             "python run_bot.py 1", 
-             "python run_bot.py 2", 
-             "python run_bot.py 3", 
-             "python run_bot.py 4", 
-             "python run_bot.py 5", 
-             "python run_bot.py 6"]
+process_calls = ["python run_server.py -m auto", 
+                 "python run_bot.py -i 1 -v", 
+                 "python run_bot.py -i 2 -v", 
+                 "python run_bot.py -i 3 -v", 
+                 "python run_bot.py -i 4 -v", 
+                 "python run_bot.py -i 5 -v", 
+                 "python run_bot.py -i 6 -v"]
 
-def game():
+def game(terminal: bool):
     # Determine where to send subprocess output
-    output = None if TERMINAL_OUTPUT else subprocess.DEVNULL
+    output = None if terminal else subprocess.DEVNULL
     # print("Starting server and bots...")
     server_process = subprocess.Popen(process_calls[0].split(" "), stdout=output, stderr=output)
     # print("Starting server...")
 
     bot_processes: list[subprocess.Popen[bytes]] = []
+    time.sleep(SLEEP_TIME)
     for i in range(1,7):
-        time.sleep(SLEEP_TIME)
         bot_processes.append(subprocess.Popen(process_calls[i].split(" "), stdout=output, stderr=output))
         # print(f"Starting bot {i}...")
     
@@ -37,7 +37,7 @@ def game():
         bot_process.wait()
     
     end_time = time.time()
-    print(f"Simulation completed in {end_time - start_time:.2f} seconds.")
+    print(f"Simulation completed in {end_time - start_time - SLEEP_TIME:.2f} seconds.")
     # Check if the server finished successfully
     if server_process.returncode != 0:
         print("Server process failed")
@@ -48,16 +48,15 @@ def game():
             print(f"Bot process {i} failed")
 
 if __name__ == "__main__":
-    jobs = 1
-    if len(sys.argv) > 1:
-        jobs = int(sys.argv[1])
-        if jobs < 1:
-            print("Number of jobs must be at least 1.")
-            sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-j', type=int, default=1, help='Number of games to run (default: 1)')
+    parser.add_argument('-o', action='store_true', help='Output to terminal (default: False)')
+    args = parser.parse_args()
+    
     start_time = time.time()
-    for i in range(jobs):
-        print(f"Game {i+1}/{jobs}: ", end="")
-        game()
+    for i in range(args.j):
+        print(f"Game {i+1}/{args.j}: ", end="")
+        game(args.o)
         time.sleep(SLEEP_TIME)
     end_time = time.time()
     print(f"All games completed in {end_time - start_time:.2f} seconds.")
