@@ -4,7 +4,7 @@ from client.coup_client import CoupClient
 from client.human import Human
 from loguru import logger
 import argparse
-import sys
+import sys, os
 
 
 if __name__ == "__main__":
@@ -19,6 +19,8 @@ if __name__ == "__main__":
     logger.add(sys.stderr, level="WARNING", format="<level>{message}</level>", colorize=True)
 
     # Configure File logging 
+    if not os.path.exists("../log"):
+        os.makedirs("../log")
     if args.i != "None":
         open(f"../log/human_{args.i}.log", "w").close()   # clear log file if it exists
         logger.add(f"../log/human_{args.i}.log", 

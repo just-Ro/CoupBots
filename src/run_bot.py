@@ -4,7 +4,7 @@ from client.coup_client import CoupClient
 from client.bots import CoupBot, TestBot
 from loguru import logger
 import argparse
-import sys
+import sys, os
 
 
 if __name__ == "__main__":
@@ -20,7 +20,9 @@ if __name__ == "__main__":
         logger.add(sys.stderr, level="SUCCESS", format="<level>{message}</level>", colorize=False, filter=lambda record: record['level'].name == 'SUCCESS')
         logger.add(sys.stderr, level="WARNING", format="<level>{message}</level>", colorize=True)
 
-    # Configure File logging 
+    # Configure File logging
+    if not os.path.exists("../log"):
+        os.makedirs("../log")
     if args.i != "None":
         open(f"../log/bot_{args.i}.log", "w").close()   # clear log file if it exists
         logger.add(f"../log/bot_{args.i}.log", 

@@ -5,7 +5,7 @@ from client.coup_client import CoupClient
 from client.root import Root
 from loguru import logger
 import argparse
-import sys
+import sys, os
 
 
 if __name__ == "__main__":
@@ -26,6 +26,8 @@ if __name__ == "__main__":
         logger.add(sys.stderr, level="WARNING", format="<level>{message}</level>", colorize=True)
 
     # Configure File logging
+    if not os.path.exists("../log"):
+        os.makedirs("../log")
     open("../log/server.log", "w").close()  # Clear log file
     logger.add(f"../log/server.log", level="TRACE", format="<green>{time:YYYY:MM:DD at HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
 
