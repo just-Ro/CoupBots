@@ -492,6 +492,9 @@ class Root(Player):
     
     def end_game(self):
         self.send_all_and_update(game_proto.EXIT(), PlayerState.END)
+        for player in self.players.values():
+            if player.alive:
+                logger.success(f"🏆 Player {player.id} wins!")
     
 ### Game methods
 
@@ -617,6 +620,10 @@ class Root(Player):
         if target is not None:
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
             target.deck.remove(str(target.msg.card1))
+            if len(target.deck) == 0:
+                logger.success(f"💀 Player {target.id} dead!")
+            else:
+                logger.success(f"🎯 Player {target.id} hit!")
             self.send_single_and_update(game_proto.DECK(*target.deck), target.id, PlayerState.R_DECK)
             if len(target.deck) == 0:
                 target.alive = False
