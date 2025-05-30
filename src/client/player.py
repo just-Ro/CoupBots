@@ -71,7 +71,7 @@ class InformedPlayer(Player, PlayerSim):
         msg (GameMessage): Message to be sent to the server.
         players (dict[str, PlayerSim]): Dictionary of players in the game.
         possible_messages (list[str]): List of possible messages the player can send.
-        rcv_msgs (list[GameMessage]): History of received messages.
+        history (list[GameMessage]): History of received messages.
         ready (bool): Flag for whether the player is ready or not.
         replied (bool): Flag for whether the player has replied to the last message or not.
         state (PlayerState): State of the player.
