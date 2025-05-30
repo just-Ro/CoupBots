@@ -71,7 +71,7 @@ class InformedPlayer(Player, PlayerSim):
         msg (GameMessage): Message to be sent to the server.
         players (dict[str, PlayerSim]): Dictionary of players in the game.
         possible_messages (list[str]): List of possible messages the player can send.
-        rcv_msg (GameMessage): Last received message.
+        rcv_msgs (list[GameMessage]): History of received messages.
         ready (bool): Flag for whether the player is ready or not.
         replied (bool): Flag for whether the player has replied to the last message or not.
         state (PlayerState): State of the player.
@@ -86,17 +86,17 @@ class InformedPlayer(Player, PlayerSim):
         PlayerSim.__init__(self, '0', {})
         self.terminate_after_death = False
         """Flag for whether the player should terminate after its own death. \n\n- True: The player will terminate when dead. \n- False: The player will continue to receive messages without replying."""
-        self.rcv_msg = GameMessage(OK)
-        """Last received message."""
+        self.history: list[GameMessage] = [GameMessage(OK)]
+        """History of received messages. Current received message is always the last one."""
         self.msg = GameMessage(HELLO)
         self.send_message(self.msg)
 
     def receive(self, message: str) -> int:
         try:
             logger.success("RECV - " + str(message))
-            m = GameMessage(message)
-            self.pre_update_state(m)
-            if self.state == PlayerState.IDLE or m.command == DEAD:
+            self.history.append(GameMessage(message))
+            self.pre_update_state()
+            if self.state == PlayerState.IDLE or self.history[-1].command == DEAD:
                 pass
             elif self.state == PlayerState.END:
                 logger.info("Game Over, terminating bot.")
@@ -105,9 +105,8 @@ class InformedPlayer(Player, PlayerSim):
                 logger.debug(f"State: {self.state}")
                 logger.debug(f"Possible messages: {self.possible_messages}")
                 self.choose_message()
-                self.post_update_state(self.msg)
+                self.post_update_state()
                 self.send_message(self.msg)
-                self.rcv_msg = m
                 logger.success("SEND - " + str(self.msg))
         except IndexError:
             logger.error(f"No possible messages.")
@@ -115,22 +114,24 @@ class InformedPlayer(Player, PlayerSim):
             logger.error(f"Error in receive: " + str(e))
         return 0
 
-    def pre_update_state(self, message: GameMessage) -> None:
+    def pre_update_state(self) -> None:
         """
         Updates the state of the player based on the received message before any action is taken. 
 
         Arguments:
             message {GameMessage} -- received message
         """
-                        
-        if message.command == EXIT:
+        current_msg = self.history[-1]
+        prev_msg = self.history[-2]
+
+        if current_msg.command == EXIT:
             self.set_state(PlayerState.END)
             logger.info(f"Received EXIT message.")
         
-        elif message.command == DEAD:
+        elif current_msg.command == DEAD:
             # Don't change state
-            if message.ID1 is not None:
-                self.players[message.ID1].alive = False
+            if current_msg.ID1 is not None:
+                self.players[current_msg.ID1].alive = False
         
         elif not self.alive:
             if self.terminate_after_death:
@@ -138,51 +139,51 @@ class InformedPlayer(Player, PlayerSim):
             else:
                 self.set_state(PlayerState.IDLE)
         
-        elif message.command == HELLO:
+        elif current_msg.command == HELLO:
             self.set_state(PlayerState.IDLE)
             logger.warning(f"Received unexpected message: HELLO")
         
-        elif message.command == READY:
+        elif current_msg.command == READY:
             self.set_state(PlayerState.IDLE)
             logger.warning(f"Received unexpected message: READY")
         
-        elif message.command == OK:
+        elif current_msg.command == OK:
             self.set_state(PlayerState.IDLE)
             logger.warning(f"Received unexpected message: OK")
         
-        elif message.command == KEEP:
+        elif current_msg.command == KEEP:
             self.set_state(PlayerState.IDLE)
             logger.warning(f"Received unexpected message: KEEP")
         
-        elif message.command == ACT:
-            if message.action == INCOME:
+        elif current_msg.command == ACT:
+            if current_msg.action == INCOME:
                 self.set_state(PlayerState.R_INCOME)
-            elif message.action == FOREIGN_AID:
+            elif current_msg.action == FOREIGN_AID:
                 self.set_state(PlayerState.R_FAID)
-            elif message.action == TAX:
+            elif current_msg.action == TAX:
                 self.set_state(PlayerState.R_TAX)
-            elif message.action == EXCHANGE:
+            elif current_msg.action == EXCHANGE:
                 self.set_state(PlayerState.R_EXCHANGE)
-            elif message.action == ASSASSINATE:
-                if message.ID2 == self.id:
+            elif current_msg.action == ASSASSINATE:
+                if current_msg.ID2 == self.id:
                     self.set_state(PlayerState.R_ASSASS_ME)
                 else:
                     self.set_state(PlayerState.R_ASSASS)
-            elif message.action == STEAL:
-                if message.ID2 == self.id:
+            elif current_msg.action == STEAL:
+                if current_msg.ID2 == self.id:
                     self.set_state(PlayerState.R_STEAL_ME)
                 else:
                     self.set_state(PlayerState.R_STEAL)
-            elif message.action == COUP:
-                if message.ID2 == self.id:
+            elif current_msg.action == COUP:
+                if current_msg.ID2 == self.id:
                     self.set_state(PlayerState.R_COUP_ME)
                 else:
                     self.set_state(PlayerState.R_COUP)
             else:
                 self.set_state(PlayerState.IDLE)
-                logger.error(f"Invalid action: {message.action}")
+                logger.error(f"Invalid action: {current_msg.action}")
                 
-        elif message.command == BLOCK:
+        elif current_msg.command == BLOCK:
             self.tag = Tag.T_NONE
             if self.turn:
                 self.tag = Tag.T_BLOCKED
@@ -190,43 +191,43 @@ class InformedPlayer(Player, PlayerSim):
                     self.set_state(PlayerState.R_BLOCK_FAID)
                 elif self.msg.action == ASSASSINATE:
                     self.set_state(PlayerState.R_BLOCK_ASSASS)
-                elif self.msg.action == STEAL and message.card1 == CAPTAIN:
+                elif self.msg.action == STEAL and current_msg.card1 == CAPTAIN:
                     self.set_state(PlayerState.R_BLOCK_STEAL_C)
-                elif self.msg.action == STEAL and message.card1 == AMBASSADOR:
+                elif self.msg.action == STEAL and current_msg.card1 == AMBASSADOR:
                     self.set_state(PlayerState.R_BLOCK_STEAL_B)
                 else:
                     self.set_state(PlayerState.IDLE)
                     logger.error(f"Invalid action: {self.msg.action}")
             else: 
-                if self.rcv_msg.action == FOREIGN_AID:
+                if prev_msg.action == FOREIGN_AID:
                     self.set_state(PlayerState.R_BLOCK_FAID)
-                elif self.rcv_msg.action == ASSASSINATE:
+                elif prev_msg.action == ASSASSINATE:
                     self.set_state(PlayerState.R_BLOCK_ASSASS)
-                elif self.rcv_msg.action == STEAL and message.card1 == CAPTAIN:
+                elif prev_msg.action == STEAL and current_msg.card1 == CAPTAIN:
                     self.set_state(PlayerState.R_BLOCK_STEAL_C)
-                elif self.rcv_msg.action == STEAL and message.card1 == AMBASSADOR:
+                elif prev_msg.action == STEAL and current_msg.card1 == AMBASSADOR:
                     self.set_state(PlayerState.R_BLOCK_STEAL_B)
                 else:
                     self.set_state(PlayerState.IDLE)
-                    logger.error(f"Invalid action: {self.rcv_msg.action}")
+                    logger.error(f"Invalid action: {prev_msg.action}")
                 
-        elif message.command == CHAL:
+        elif current_msg.command == CHAL:
             self.tag = Tag.T_NONE
             logger.debug(f"Deck: {self.deck}")
 
             if self.turn:
-                if self.rcv_msg.command == BLOCK:
-                    if self.rcv_msg.card1 == AMBASSADOR:
+                if prev_msg.command == BLOCK:
+                    if prev_msg.card1 == AMBASSADOR:
                         self.set_state(PlayerState.R_CHAL_B)
-                    elif self.rcv_msg.card1 == CAPTAIN:
+                    elif prev_msg.card1 == CAPTAIN:
                         self.set_state(PlayerState.R_CHAL_C)
-                    elif self.rcv_msg.card1 == DUKE:
+                    elif prev_msg.card1 == DUKE:
                         self.set_state(PlayerState.R_CHAL_D)
-                    elif self.rcv_msg.card1 == CONTESSA:
+                    elif prev_msg.card1 == CONTESSA:
                         self.set_state(PlayerState.R_CHAL_E)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
+                        logger.error(f"Challenging a non-challengeable action: {str(prev_msg)}")
                 elif self.msg.command == ACT:
                     if self.msg.action == ASSASSINATE:
                         self.tag = Tag.T_CHALLENGED
@@ -264,89 +265,89 @@ class InformedPlayer(Player, PlayerSim):
                         self.set_state(PlayerState.IDLE)
                         logger.error(f"Challenging a non-challengeable action: {str(self.msg)}")
                 
-                elif self.rcv_msg.command == BLOCK:
-                    if self.rcv_msg.card1 == AMBASSADOR:
+                elif prev_msg.command == BLOCK:
+                    if prev_msg.card1 == AMBASSADOR:
                         self.set_state(PlayerState.R_CHAL_B)
-                    elif self.rcv_msg.card1 == CAPTAIN:
+                    elif prev_msg.card1 == CAPTAIN:
                         self.set_state(PlayerState.R_CHAL_C)
-                    elif self.rcv_msg.card1 == DUKE:
+                    elif prev_msg.card1 == DUKE:
                         self.set_state(PlayerState.R_CHAL_D)
-                    elif self.rcv_msg.card1 == CONTESSA:
+                    elif prev_msg.card1 == CONTESSA:
                         self.set_state(PlayerState.R_CHAL_E)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
+                        logger.error(f"Challenging a non-challengeable action: {str(prev_msg)}")
                 
-                elif self.rcv_msg.command == ACT:
-                    if self.rcv_msg.action == ASSASSINATE:
+                elif prev_msg.command == ACT:
+                    if prev_msg.action == ASSASSINATE:
                         self.set_state(PlayerState.R_CHAL_A)
-                    elif self.rcv_msg.action == EXCHANGE:
+                    elif prev_msg.action == EXCHANGE:
                         self.set_state(PlayerState.R_CHAL_B)
-                    elif self.rcv_msg.action == STEAL:
+                    elif prev_msg.action == STEAL:
                         self.set_state(PlayerState.R_CHAL_C)
-                    elif self.rcv_msg.action == TAX:
+                    elif prev_msg.action == TAX:
                         self.set_state(PlayerState.R_CHAL_D)
                     else:
                         self.set_state(PlayerState.IDLE)
-                        logger.error(f"Challenging a non-challengeable action: {str(self.rcv_msg)}")
+                        logger.error(f"Challenging a non-challengeable action: {str(prev_msg)}")
             
-        elif message.command == SHOW:
+        elif current_msg.command == SHOW:
             self.set_state(PlayerState.R_SHOW)
                 
-        elif message.command == LOSE:
-            if message.ID1 == None or message.ID1 == self.id:
+        elif current_msg.command == LOSE:
+            if current_msg.ID1 == None or current_msg.ID1 == self.id:
                 self.set_state(PlayerState.R_LOSE_ME)
             else:
                 self.set_state(PlayerState.R_LOSE)
             
-        elif message.command == COINS:
+        elif current_msg.command == COINS:
             self.set_state(PlayerState.R_COINS)
-            if message.ID1 is not None and message.coins is not None:
-                if message.ID1 == self.id:
-                    self.coins = int(message.coins)
-                elif message.ID1 in self.players.keys():
-                    self.players[message.ID1].coins = int(message.coins)
+            if current_msg.ID1 is not None and current_msg.coins is not None:
+                if current_msg.ID1 == self.id:
+                    self.coins = int(current_msg.coins)
+                elif current_msg.ID1 in self.players.keys():
+                    self.players[current_msg.ID1].coins = int(current_msg.coins)
             
-        elif message.command == DECK:
+        elif current_msg.command == DECK:
             self.set_state(PlayerState.R_DECK)
-            if message.card1 is not None:
-                if message.card2 is not None:
-                    self.deck = [message.card1, message.card2]
+            if current_msg.card1 is not None:
+                if current_msg.card2 is not None:
+                    self.deck = [current_msg.card1, current_msg.card2]
                 else:
-                    self.deck = [message.card1]
+                    self.deck = [current_msg.card1]
             else:
                 self.deck = []
                 self.alive = False
             
-        elif message.command == CHOOSE:
-            if message.card1 is None or message.card2 is None:
+        elif current_msg.command == CHOOSE:
+            if current_msg.card1 is None or current_msg.card2 is None:
                 self.set_state(PlayerState.IDLE)
-                logger.error(f"Invalid CHOOSE message: {message}")
+                logger.error(f"Invalid CHOOSE message: {prev_msg}")
             else:
-                self.exchange_cards = [message.card1, message.card2]
+                self.exchange_cards = [current_msg.card1, current_msg.card2]
                 self.set_state(PlayerState.R_CHOOSE)
             
-        elif message.command == PLAYER:
+        elif current_msg.command == PLAYER:
             self.set_state(PlayerState.R_PLAYER)
-            if message.ID1 is not None:
+            if current_msg.ID1 is not None:
                 if self.id == '0':
-                    self.id = str(message.ID1)
+                    self.id = str(current_msg.ID1)
                 else:
-                    self.players[message.ID1] = PlayerSim(message.ID1, self.players)
-                    self.players[message.ID1].alive = True
+                    self.players[current_msg.ID1] = PlayerSim(current_msg.ID1, self.players)
+                    self.players[current_msg.ID1].alive = True
             
-        elif message.command == START:
+        elif current_msg.command == START:
             self.set_state(PlayerState.START)
             
-        elif message.command == TURN:
-            if message.ID1 == self.id:
+        elif current_msg.command == TURN:
+            if current_msg.ID1 == self.id:
                 self.turn = True
                 self.set_state(PlayerState.R_MY_TURN)
             else:
                 self.turn = False
                 self.set_state(PlayerState.R_OTHER_TURN)
    
-        elif message.command == ILLEGAL:
+        elif current_msg.command == ILLEGAL:
             # keep in the same state
             logger.warning(f"Received ILLEGAL message.")
             for msg in self.possible_messages:
@@ -355,7 +356,7 @@ class InformedPlayer(Player, PlayerSim):
             
         else:
             self.set_state(PlayerState.IDLE)
-            logger.error(f"Invalid command: {message.command}")
+            logger.error(f"Invalid command: {current_msg.command}")
     
     def choose_message(self) -> None:
         """
@@ -364,28 +365,28 @@ class InformedPlayer(Player, PlayerSim):
         """
         raise NotImplementedError("choose_message() not implemented.")
     
-    def post_update_state(self, message: GameMessage) -> None:
+    def post_update_state(self) -> None:
         """
         Updates the state of the player based on the received message and the chosen reply.
 
         Arguments:
             message {GameMessage} -- chosen message to be sent
         """
-        if message.command == CHAL:
+        if self.msg.command == CHAL:
             self.tag = Tag.T_CHALLENGING
             
-        elif message.command == BLOCK:
+        elif self.msg.command == BLOCK:
             self.tag = Tag.T_BLOCKING
         
-        elif message.command == KEEP:
-            if message.card1 is not None:
-                if message.card2 is not None:
-                    self.deck = [message.card1, message.card2]
+        elif self.msg.command == KEEP:
+            if self.msg.card1 is not None:
+                if self.msg.card2 is not None:
+                    self.deck = [self.msg.card1, self.msg.card2]
                 else:
-                    self.deck = [message.card1]
+                    self.deck = [self.msg.card1]
                 logger.debug(f"New deck: {self.deck}")
             else:
-                logger.error(f"Invalid message: {message}")
+                logger.error(f"Invalid message: {self.msg}")
         
         if not self.alive:
             self.set_state(PlayerState.END)
