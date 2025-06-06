@@ -60,7 +60,7 @@ class CoupClient(Client):
             logger.warning("Method not implemented yet!")
             self.signal = False
         except Exception as e:
-            logger.error(f"Error in receiver: {e}")
+            logger.exception(f"Error in receiver: {e}")
             self.signal = False
 
 

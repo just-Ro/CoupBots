@@ -1,14 +1,16 @@
 #!/usr/bin/env python3.12
 
 from client.coup_client import CoupClient
-from client.bots import CoupBot, TestBot
+from client.bots import CoupBot, TestBot, RandomBot, HonestBot
 from loguru import logger
 import argparse
 import sys, os
 
 BOTS = {
     "CoupBot": CoupBot,
-    "TestBot": TestBot
+    "TestBot": TestBot,
+    "RandomBot": RandomBot,
+    "HonestBot": HonestBot,
 }
 
 if __name__ == "__main__":

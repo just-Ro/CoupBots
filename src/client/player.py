@@ -111,7 +111,7 @@ class InformedPlayer(Player, PlayerSim):
         except IndexError:
             logger.error(f"No possible messages.")
         except Exception as e:
-            logger.error(f"Error in receive: " + str(e))
+            logger.exception(f"Error in receive: " + str(e))
         return 0
 
     def pre_update_state(self) -> None:

@@ -7,7 +7,8 @@ import random
 from loguru import logger
 
 
-
+# This class is used to implement your bot.
+# You are free to edit and delete this class.
 class CoupBot(InformedPlayer):
     """
     CoopBot player class.
@@ -48,6 +49,170 @@ class CoupBot(InformedPlayer):
         # Example: choose a random message from possible messages
         self.msg = GameMessage(random.choice(self.possible_messages))
 
+class RandomBot(InformedPlayer):
+    """RandomBot player class."""
+
+    def __init__(self):
+        super().__init__()
+
+    def choose_message(self):
+        if len(self.possible_messages) == 0:
+            raise IndexError("No possible messages.")
+        self.msg = GameMessage(random.choice(self.possible_messages)) # choose random
+
+class HonestBot(InformedPlayer):
+    """HonestBot player class."""
+
+    def __init__(self):
+        super().__init__()
+
+    def pick_random(self, possible_messages: list[str]):
+        """Pick a random message from the possible messages."""
+        if len(possible_messages) == 0:
+            raise IndexError("No possible messages.")
+        
+        self.msg = GameMessage(random.choice(possible_messages))
+
+    def choose_message(self):
+        current_msg = self.history[-1]
+        previous_msg = self.history[-2]
+        if current_msg.ID1 is None or len(self.players) == 0:
+            self.pick_random(self.possible_messages)
+            return
+        
+        choices: list[str] = []
+        
+        # Update previous player deck in case of a change in their deck
+        if self.state == PlayerState.R_MY_TURN or self.state == PlayerState.R_OTHER_TURN:
+            if previous_msg.command == ACT and previous_msg.action == EXCHANGE:
+                # the player has exchanged cards successfully
+                if previous_msg.ID1 in self.players:
+                    self.players[previous_msg.ID1].deck = []
+                else:
+                    logger.warning(f"Player {previous_msg.ID1} not found in players list.")
+                    
+        elif self.state == PlayerState.R_LOSE or self.state == PlayerState.R_SHOW:
+            if previous_msg.command == SHOW or previous_msg.command == LOSE:
+                # the card that was shown or lost is no longer in the player's deck
+                if previous_msg.ID1 in self.players:
+                    if previous_msg.card1 in self.players[previous_msg.ID1].deck:
+                        self.players[previous_msg.ID1].deck.remove(previous_msg.card1)
+                else:
+                    logger.warning(f"Player {previous_msg.ID1} not found in players list.")
+        
+        # Believe any player that claims to have a card, 
+        # if at least one of their cards is unknown
+        if self.state == PlayerState.R_MY_TURN:
+            if self.coins < COUP_COINS_THRESHOLD:
+                
+                choices.append(game_proto.ACT(self.id, INCOME))
+                choices.append(game_proto.ACT(self.id, FOREIGN_AID))
+                if DUKE in self.deck:
+                    choices.append(game_proto.ACT(self.id, TAX))
+                if AMBASSADOR in self.deck:
+                    choices.append(game_proto.ACT(self.id, EXCHANGE))
+                
+                if CAPTAIN in self.deck:
+                    for target in self.players.values():
+                        if target != self and target.alive:
+                            choices.append(game_proto.ACT(self.id, STEAL, target.id))
+                
+                if ASSASSIN in self.deck and self.coins >= ASSASSINATION_COST:
+                    for target in self.players.values():
+                        if target != self and target.alive:
+                            choices.append(game_proto.ACT(self.id, ASSASSINATE, target.id))
+            
+            if self.coins >= COUP_COST:
+                for target in self.players.values():
+                    if target != self and target.alive:
+                        choices.append(game_proto.ACT(self.id, COUP, target.id))
+                            
+        elif self.state == PlayerState.R_FAID:
+            choices.append(game_proto.OK())
+            if DUKE in self.deck:
+                choices.append(game_proto.BLOCK(self.id, DUKE))
+
+        elif self.state == PlayerState.R_EXCHANGE:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(AMBASSADOR)
+            elif AMBASSADOR not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+            
+        elif self.state == PlayerState.R_TAX:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(DUKE)
+            elif DUKE not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_ASSASS_ME:
+            choices.append(game_proto.OK())
+            if CONTESSA in self.deck:
+                choices.append(game_proto.BLOCK(self.id, CONTESSA))
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(ASSASSIN)
+            elif ASSASSIN not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_ASSASS:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(ASSASSIN)
+            elif ASSASSIN not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_STEAL_ME:
+            choices.append(game_proto.OK())
+            if CAPTAIN in self.deck:
+                choices.append(game_proto.BLOCK(self.id, CAPTAIN))
+            if AMBASSADOR in self.deck:
+                choices.append(game_proto.BLOCK(self.id, AMBASSADOR))
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(CAPTAIN)
+            elif CAPTAIN not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_STEAL:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(CAPTAIN)
+            elif CAPTAIN not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+
+        elif self.state == PlayerState.R_BLOCK_FAID:
+            choices.append(game_proto.OK())
+            if DUKE in self.deck:
+                choices.append(game_proto.BLOCK(self.id, DUKE))
+                
+        elif self.state == PlayerState.R_BLOCK_ASSASS:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(CONTESSA)
+            elif CONTESSA not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_BLOCK_STEAL_B:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(AMBASSADOR)
+            elif AMBASSADOR not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+                
+        elif self.state == PlayerState.R_BLOCK_STEAL_C:
+            choices.append(game_proto.OK())
+            if len(self.players[current_msg.ID1].deck) < 2:
+                self.players[current_msg.ID1].deck.append(CAPTAIN)
+            elif CAPTAIN not in self.players[current_msg.ID1].deck:
+                choices.append(game_proto.CHAL(self.id))
+        
+        else:
+            self.pick_random(self.possible_messages)
+            return
+        
+        self.pick_random(choices)
+        
+        
 
 class TestBot(InformedPlayer):
     """TestBot player class."""
@@ -60,7 +225,6 @@ class TestBot(InformedPlayer):
             raise IndexError("No possible messages.")
         self.msg = GameMessage(random.choice(self.possible_messages)) # choose random
         # self.msg = GameMessage(self.possible_messages[-1]) # choose last
-        return
         
         # test with priority choices
         msgs: list[GameMessage] = []
