@@ -30,6 +30,8 @@ class Root(Player):
         self.blocker_challenger = None
         self.turn_msg = None
         self.mode = mode
+        self.player_order: list[str] = []
+        self.players_cycle = itertools.cycle(self.player_order)
     
     def receive(self, net_msg: str) -> int:
         try:
@@ -82,6 +84,7 @@ class Root(Player):
                 # Add new player
                 # TODO: assign first unused ID instead of using the address
                 self.players[net.addr] = (PlayerSim(net.addr, self.players))
+                self.update_player_order()
                 self.send_single_and_update(game_proto.PLAYER(str(net.addr)), net.addr, PlayerState.R_PLAYER)
             return 0
         
@@ -489,6 +492,9 @@ class Root(Player):
     
     def end_game(self):
         self.send_all_and_update(game_proto.EXIT(), PlayerState.END)
+        for player in self.players.values():
+            if player.alive:
+                logger.success(f"🏆 Player {player.id} wins!")
     
 ### Game methods
 
@@ -522,34 +528,33 @@ class Root(Player):
         raise IndexError("Deck is empty, cannot take card.")
     
     def next_player_turn(self):
-        players_cycle = itertools.cycle(self.players.keys())
-        
-        # Check if any player has `turn = True`
+        # Find current player
         current_player_id = None
         for player_id in self.players:
             if self.players[player_id].turn:
                 current_player_id = player_id
                 break
-        
-        # If no player has `turn = True`, start from the first player in the cycle
+
         if current_player_id is None:
-            self.turn_id = next(players_cycle)
-            self.players[self.turn_id].turn = True
-            return
-        
-        # Skip to the current player's position in the cycle and reset their turn
-        for player_id in players_cycle:
-            if player_id == current_player_id:
-                self.players[player_id].turn = False  # Reset current player's turn
-                break
-        
-        # Continue to find the next alive player
-        for player_id in players_cycle:
-            player = self.players[player_id]
-            if player.alive:
-                self.turn_id = player_id
-                self.players[player_id].turn = True  # Set next player's turn
+            # no current turn, just pick the next in cycle
+            while True:
+                next_id = next(self.players_cycle)
+                if self.players[next_id].alive:
+                    self.turn_id = next_id
+                    self.players[next_id].turn = True
+                    return
+
+        # reset current player's turn
+        self.players[current_player_id].turn = False
+
+        # find next alive player
+        while True:
+            next_id = next(self.players_cycle)
+            if self.players[next_id].alive:
+                self.turn_id = next_id
+                self.players[next_id].turn = True
                 return
+
 
     def do_action(self, msg: GameMessage, turn: PlayerSim, target: PlayerSim | None):
         if turn is None or msg is None:
@@ -602,6 +607,12 @@ class Root(Player):
     
 ### Helper methods
 
+    def update_player_order(self):
+        self.player_order = list(self.players.keys())
+        random.shuffle(self.player_order)
+        self.players_cycle = itertools.cycle(self.player_order)
+        logger.debug(f"Updated player order: {self.player_order}")
+
     def broadcast_dead(self, exclude: str):
         self._send_except(game_proto.DEAD(exclude), exclude)
         
@@ -609,6 +620,10 @@ class Root(Player):
         if target is not None:
             self.send_except_and_update(str(target.msg), target.id, PlayerState.R_LOSE)
             target.deck.remove(str(target.msg.card1))
+            if len(target.deck) == 0:
+                logger.success(f"💀 Player {target.id} dead!")
+            else:
+                logger.success(f"🎯 Player {target.id} hit!")
             self.send_single_and_update(game_proto.DECK(*target.deck), target.id, PlayerState.R_DECK)
             if len(target.deck) == 0:
                 target.alive = False

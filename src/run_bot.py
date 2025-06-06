@@ -6,6 +6,10 @@ from loguru import logger
 import argparse
 import sys, os
 
+BOTS = {
+    "CoupBot": CoupBot,
+    "TestBot": TestBot
+}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -13,6 +17,7 @@ if __name__ == "__main__":
     parser.add_argument('-a', type=str, default='localhost', help='Address (default: localhost)')
     parser.add_argument('-i', type=str, default='None', help="Player ID (default: None)")
     parser.add_argument('-v', action='store_false', help='Verbose mode (default: True)')
+    parser.add_argument('-b', type=str, default='TestBot', help='Bot type (default: TestBot)', choices=BOTS.keys())
     args = parser.parse_args()
     
     logger.remove()  # Remove default logger
@@ -30,7 +35,6 @@ if __name__ == "__main__":
                    format="<green>{time:HH:mm:ss:SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level>")
 
     # Create client
-    # player = TestBot()
-    player = CoupBot()
+    player = BOTS[args.b]()
     client = CoupClient(args.a, args.p, player)
     client.run()
